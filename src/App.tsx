@@ -3,12 +3,13 @@ import { MrCharlesAvatar } from './components/Avatar/MrCharlesAvatar';
 import type { AvatarEmotion } from './components/Avatar/MrCharlesAvatar';
 import { Navbar } from './components/Header/Navbar';
 import { ChatBox } from './components/Dialogue/ChatBox';
+import { WordTranslationModal } from './components/Dialogue/WordTranslationModal';
 import { VoiceControls } from './components/Controls/VoiceControls';
 import { PronunciationChallengeCard } from './components/Challenge/PronunciationChallengeCard';
 import { ScenarioSelectorModal } from './components/Scenarios/ScenarioSelectorModal';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { LevelAndTrackModal } from './components/Levels/LevelAndTrackModal';
-import { Volume2, Radio, Play } from 'lucide-react';
+import { Volume2, Radio, Play, MessageSquare, UserCheck, Languages } from 'lucide-react';
 
 import { useSpeechSynthesis, useSpeechRecognition } from './services/speechEngine';
 import { sounds } from './services/soundEffects';
@@ -35,6 +36,8 @@ import type {
   SpeakingLevel,
   CareerDomain
 } from './services/levelsAndTracks';
+import { lookupWord } from './services/dictionaryService';
+import type { WordDefinition } from './services/dictionaryService';
 
 export const App: React.FC = () => {
   // Speech Hooks
@@ -78,6 +81,13 @@ export const App: React.FC = () => {
   const [activeTrap, setActiveTrap] = useState<PronunciationTrap | null>(null);
   const [pendingUserQuery, setPendingUserQuery] = useState<string>('');
   const [lastCharlesSpeech, setLastCharlesSpeech] = useState<string>('');
+
+  // Mobile Parallel Layout State ('avatar' | 'chat')
+  const [mobileTab, setMobileTab] = useState<'avatar' | 'chat'>('avatar');
+
+  // Word Translation Popover State (Tap-to-Translate)
+  const [selectedWordDef, setSelectedWordDef] = useState<WordDefinition | null>(null);
+  const [showWordModal, setShowWordModal] = useState<boolean>(false);
 
   // Live Mode: Direct continuous hands-free dialogue!
   const [isLiveMode, setIsLiveMode] = useState<boolean>(true);
@@ -212,6 +222,18 @@ export const App: React.FC = () => {
     speakCharles(currentLevel.initialGreeting || scenario.initialGreeting, 'speaking');
   };
 
+  // Word Translation Click Handler
+  const handleSelectWord = (def: WordDefinition) => {
+    setSelectedWordDef(def);
+    setShowWordModal(true);
+  };
+
+  // Single word audio pronunciation (slow / normal)
+  const handleSpeakSingleWord = (word: string, rate: number = 0.72) => {
+    unlockAudio();
+    speak(word, { rate });
+  };
+
   // Handle User Input (Speech or Text)
   const handleUserSpeech = async (userText: string) => {
     if (!userText.trim()) return;
@@ -257,6 +279,7 @@ export const App: React.FC = () => {
           ? ` Splendid! Now, regarding your question about "${currentPending}": `
           : ' ';
         let finalReply = currentTrap.successQuote + followUp;
+        let finalArabic = 'رائع جداً! لقد نطقت الكلمة بشكل مثالي، وها هو مستر منقوري يجيب عن سؤالك الأصلي!';
 
         if (currentPending) {
           const answer = generateCharlesResponse(
@@ -266,13 +289,14 @@ export const App: React.FC = () => {
             currentDomain.id
           );
           finalReply += answer.replyText;
+          finalArabic += ` (${answer.arabicTranslation})`;
         }
 
         const charlesSuccessMsg: Message = {
           id: 'charles-' + Date.now(),
           sender: 'charles',
           text: finalReply,
-          arabicTranslation: 'رائع جداً! لقد نطقت الكلمة بشكل مثالي، وها هو مستر منقوري يجيب عن سؤالك الأصلي!',
+          arabicTranslation: finalArabic,
           timestamp: new Date()
         };
         setMessages((prev) => [...prev, charlesSuccessMsg]);
@@ -310,6 +334,11 @@ export const App: React.FC = () => {
       setActiveTrap(detectedTrap);
       setPendingUserQuery(userText);
 
+      // On mobile, automatically show the challenge if user is on avatar tab
+      if (mobileTab === 'avatar') {
+        setMobileTab('chat');
+      }
+
       const scoldingText = `${detectedTrap.angryQuote} You must now pronounce the word "${detectedTrap.word}" correctly before we proceed!`;
 
       const charlesAngryMsg: Message = {
@@ -332,6 +361,7 @@ export const App: React.FC = () => {
 
     try {
       let replyText = '';
+      let replyArabic = '';
       let replyEmotion: AvatarEmotion = 'proud';
 
       if (apiKey.trim()) {
@@ -346,6 +376,7 @@ export const App: React.FC = () => {
           currentDomain.id
         );
         replyText = geminiResult.reply;
+        replyArabic = geminiResult.arabicTranslation || '';
         replyEmotion = geminiResult.emotion;
       } else {
         const fallback = generateCharlesResponse(
@@ -355,6 +386,7 @@ export const App: React.FC = () => {
           currentDomain.id
         );
         replyText = fallback.replyText;
+        replyArabic = fallback.arabicTranslation;
         replyEmotion = fallback.emotion;
       }
 
@@ -362,6 +394,7 @@ export const App: React.FC = () => {
         id: 'charles-' + Date.now(),
         sender: 'charles',
         text: replyText,
+        arabicTranslation: replyArabic,
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, charlesReplyMsg]);
@@ -379,6 +412,7 @@ export const App: React.FC = () => {
         id: 'charles-' + Date.now(),
         sender: 'charles',
         text: fallback.replyText,
+        arabicTranslation: fallback.arabicTranslation,
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, charlesReplyMsg]);
@@ -452,8 +486,11 @@ export const App: React.FC = () => {
     ...currentDomain.samplePrompts.slice(0, 2)
   ];
 
+  // Latest message from Charles for quick preview in Mobile Avatar mode
+  const latestCharlesMsg = [...messages].reverse().find((m) => m.sender === 'charles');
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#070D1E] text-slate-100 font-sans selection:bg-amber-500 selection:text-black">
+    <div className="flex flex-col min-h-screen bg-[#070D1E] text-slate-100 font-sans selection:bg-amber-500 selection:text-black overflow-x-hidden">
       {/* 1. Header Navbar */}
       <Navbar
         points={points}
@@ -478,8 +515,49 @@ export const App: React.FC = () => {
         onOpenLevels={() => setShowLevelModal(true)}
       />
 
+      {/* 2. Mobile View Switcher (Parallel Layout for Mobile Phones < md) */}
+      <div className="md:hidden sticky top-14 z-20 bg-[#070D1E]/95 backdrop-blur-md px-3 pt-2 pb-1 border-b border-slate-800">
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800">
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setMobileTab('avatar');
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              mobileTab === 'avatar'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>الأفاتار المباشر</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setMobileTab('chat');
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer relative ${
+              mobileTab === 'chat'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>الدردشة والترجمة</span>
+            {activeTrap && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute top-1.5 right-2" />
+            )}
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-amber-300">
+              {messages.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Content Area */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-between gap-3 sm:gap-4">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-between gap-3 sm:gap-4 pb-36 md:pb-6">
         {/* Error notification if mic blocked */}
         {speechError && (
           <div className="w-full max-w-lg bg-rose-950/80 border border-rose-500/60 rounded-xl px-4 py-2.5 text-xs text-rose-200 text-center shadow-lg">
@@ -487,7 +565,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 2. Direct Live Audio Activation Banner (If not yet activated) */}
+        {/* Direct Live Audio Activation Banner (If not yet activated) */}
         {!isUnlocked && (
           <div className="w-full max-w-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 text-slate-950 rounded-2xl p-3 sm:p-4 shadow-2xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-3 duration-300">
             <div className="flex items-center gap-2.5">
@@ -511,8 +589,14 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 3. Avatar Presentation Stage */}
-        <div className="flex flex-col items-center justify-center relative w-full pt-1 pb-1">
+        {/* ============================================================== */}
+        {/* VIEW 1: AVATAR STAGE (Always visible on Desktop, Tabbed on Mobile) */}
+        {/* ============================================================== */}
+        <div
+          className={`flex-col items-center justify-center relative w-full pt-1 pb-1 ${
+            mobileTab === 'avatar' ? 'flex' : 'hidden md:flex'
+          }`}
+        >
           {/* Avatar Emotion & Audio Indicator Tag */}
           <div className="mb-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {/* Level & Domain badge */}
@@ -591,10 +675,58 @@ export const App: React.FC = () => {
               <span>أعد سماع كلام مستر منقوري بصوته ({speechRate}x)</span>
             </button>
           )}
+
+          {/* MOBILE ONLY: Floating live subtitle speech card with clickable words */}
+          {latestCharlesMsg && (
+            <div className="md:hidden w-full max-w-md mt-3 px-1">
+              <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-3 shadow-lg">
+                <div className="flex items-center justify-between text-[11px] text-amber-400/90 font-semibold mb-1">
+                  <span>آخر ما قاله مستر منقوري:</span>
+                  <button
+                    onClick={() => setMobileTab('chat')}
+                    className="text-[10px] text-indigo-300 underline"
+                  >
+                    عرض المحادثة كاملة 💬
+                  </button>
+                </div>
+                <div className="text-xs font-english leading-relaxed text-slate-100">
+                  {latestCharlesMsg.text.split(/(\s+|[.,!?;:"()]+)/).map((tok, idx) => {
+                    const isWord = /[a-zA-Z]/.test(tok);
+                    if (!isWord) return <span key={idx}>{tok}</span>;
+                    return (
+                      <span
+                        key={idx}
+                        onClick={() => {
+                          sounds.playClick();
+                          const def = lookupWord(tok);
+                          if (def) handleSelectWord(def);
+                        }}
+                        className="inline-block cursor-pointer px-0.5 rounded text-amber-200 hover:text-amber-400 underline decoration-dotted decoration-amber-500/50"
+                      >
+                        {tok}
+                      </span>
+                    );
+                  })}
+                </div>
+                {latestCharlesMsg.arabicTranslation && (
+                  <div className="mt-2 pt-1.5 border-t border-slate-800 text-[11px] text-amber-300/90 flex items-start gap-1">
+                    <Languages className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                    <span>{latestCharlesMsg.arabicTranslation}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* 4. Challenge Mode Active Notice OR Chat History */}
-        <div className="w-full max-w-2xl flex-1 flex flex-col justify-center">
+        {/* ============================================================== */}
+        {/* VIEW 2: CHAT BOX & CHALLENGE (Always visible on Desktop, Tabbed on Mobile) */}
+        {/* ============================================================== */}
+        <div
+          className={`w-full max-w-2xl flex-1 flex-col justify-center ${
+            mobileTab === 'chat' ? 'flex' : 'hidden md:flex'
+          }`}
+        >
           {activeTrap ? (
             <PronunciationChallengeCard
               trap={activeTrap}
@@ -608,14 +740,17 @@ export const App: React.FC = () => {
                 isListening={isListening}
                 interimTranscript={transcript}
                 onReplaySpeech={(txt) => speakCharles(txt, 'speaking')}
+                onSelectWord={handleSelectWord}
               />
             </div>
           )}
         </div>
 
-        {/* 5. Controls Section */}
-        <div className="w-full">
-          {/* Hands-Free Notice */}
+        {/* ============================================================== */}
+        {/* 5. CONTROLS SECTION (Fixed Dock on Mobile, Embedded on Desktop) */}
+        {/* ============================================================== */}
+        <div className="fixed md:static bottom-0 left-0 right-0 z-30 bg-[#070D1E]/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none border-t md:border-t-0 border-slate-800/80 px-2 sm:px-4 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] w-full">
+          {/* Hands-Free Live Notice */}
           {isLiveMode && !activeTrap && (
             <div className="text-center mb-1 text-[11px] text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
@@ -635,6 +770,14 @@ export const App: React.FC = () => {
           />
         </div>
       </main>
+
+      {/* Word Translation Popover Modal */}
+      <WordTranslationModal
+        wordDef={selectedWordDef}
+        isOpen={showWordModal}
+        onClose={() => setShowWordModal(false)}
+        onSpeakWord={handleSpeakSingleWord}
+      />
 
       {/* Level & Career Track Modal */}
       <LevelAndTrackModal

@@ -2,6 +2,7 @@ import { getLevelById, getDomainById } from './levelsAndTracks';
 
 export interface GeminiResponse {
   reply: string;
+  arabicTranslation?: string;
   detectedMistakeWord?: string;
   emotion: 'angry' | 'laughing' | 'proud' | 'idle';
 }
@@ -49,7 +50,12 @@ ${pedagogicalGuideline}
 - SPECIAL FIELD KEYWORDS TO WEAVE IN: ${currentDomain.keywords.join(', ')}.
 - PRONUNCIATION / GRAMMAR POLICY:
 If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B', dessert vs desert, comfortable with 4 syllables, salmon with 'L', clothes, Wednesday, etc.), react with comic shock, model the correct pronunciation, and instruct them to say it!
-- Keep response spoken-friendly (2-4 sentences max). Return response naturally in English.
+- Keep response spoken-friendly (2-4 sentences max). Return response in English, accompanied by a natural polite Arabic translation.
+
+OUTPUT FORMAT REQUIREMENTS:
+Always structure your reply strictly like this:
+[REPLY]: <Your spoken English reply here>
+[ARABIC]: <Natural, polite Arabic translation for the user to understand>
 `;
 
   const contents = [
@@ -61,7 +67,7 @@ If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B
       role: 'model',
       parts: [
         {
-          text: `Understood! I am Mr. Mangory, calibrated precisely to Level ${currentLevel.id} (${currentLevel.titleEn}) in the domain of ${currentDomain.nameEn}!`
+          text: `[REPLY]: Understood! I am Mr. Mangory, calibrated precisely to Level ${currentLevel.id} (${currentLevel.titleEn}) in the domain of ${currentDomain.nameEn}!\n[ARABIC]: مفهوم! أنا مستر منقوري، تم ضبطي بدقة لمستوى ${currentLevel.titleAr} في مجال ${currentDomain.nameAr}!`
         }
       ]
     },
@@ -83,7 +89,7 @@ If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B
         contents,
         generationConfig: {
           temperature: 0.75,
-          maxOutputTokens: 250
+          maxOutputTokens: 350
         }
       })
     });
@@ -93,9 +99,20 @@ If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B
     }
 
     const data = await res.json();
-    const reply =
+    const rawReply =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Good heavens, my mind wandered for a moment! Pray repeat that?";
+      "[REPLY]: Good heavens, my mind wandered for a moment! Pray repeat that?\n[ARABIC]: يا للهول، شرد ذهني للحظة! أرجوك كرر ما قلت؟";
+
+    let reply = rawReply;
+    let arabicTranslation: string | undefined = undefined;
+
+    if (rawReply.includes('[REPLY]:')) {
+      const parts = rawReply.split('[ARABIC]:');
+      reply = parts[0].replace('[REPLY]:', '').trim();
+      if (parts[1]) {
+        arabicTranslation = parts[1].trim();
+      }
+    }
 
     // Detect emotion tone from reply
     let emotion: 'angry' | 'laughing' | 'proud' | 'idle' = 'idle';
@@ -128,6 +145,7 @@ If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B
 
     return {
       reply,
+      arabicTranslation,
       emotion
     };
   } catch (err) {
