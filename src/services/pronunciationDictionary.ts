@@ -176,18 +176,18 @@ export interface ScenarioTopic {
 export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
   {
     id: "free-talk",
-    title: "محادثة حرة مع مستر تشارلز",
-    titleEn: "Free Banter & Daily Chit-Chat",
+    title: "محادثة حرة مع مستر منقوري",
+    titleEn: "Free Banter with Mr. Mangory",
     icon: "🎩",
     description: "تحدث معه عن يومك، الطقس الإنجليزي، أو اسأله أي سؤال يخطر ببالك!",
     level: "Beginner",
     suggestedPrompts: [
-      "Hello Mr. Charles, how is the weather today?",
+      "Hello Mr. Mangory, how is the weather today?",
       "Can you give me a receipt for my tea?",
       "I feel very comfortable in this chair.",
       "What is your favorite dessert?"
     ],
-    initialGreeting: "Ah, splendid day! I am Mr. Charles, at your gracious service. Do speak clearly, my friend, and remember: Queen's English only! What is on your mind today?"
+    initialGreeting: "Ah, splendid day! I am Mr. Mangory, at your gracious service. Do speak clearly, my friend, and remember: Queen's English only! What is on your mind today?"
   },
   {
     id: "tea-etiquette",
@@ -221,8 +221,8 @@ export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
   },
   {
     id: "job-interview",
-    title: "مقابلة عمل مع اللورد تشارلز",
-    titleEn: "Job Interview with Lord Charles",
+    title: "مقابلة عمل مع اللورد منقوري",
+    titleEn: "Job Interview with Lord Mangory",
     icon: "💼",
     description: "تدرب على اللغة الإنجليزية الرسمية واعرض مهاراتك بثقة وأناقة دبلوماسية.",
     level: "Intermediate",

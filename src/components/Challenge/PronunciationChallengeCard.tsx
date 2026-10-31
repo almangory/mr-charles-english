@@ -21,7 +21,7 @@ export const PronunciationChallengeCard: React.FC<Props> = ({
         <div className="flex items-center gap-2 text-rose-400">
           <AlertTriangle className="w-5 h-5 animate-bounce" />
           <span className="font-bold text-sm tracking-wide">
-            تحدي نطق مستر تشارلز الفوري! ⚠️
+            تحدي نطق مستر منقوري الفوري! ⚠️
           </span>
         </div>
         <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">
@@ -75,7 +75,7 @@ export const PronunciationChallengeCard: React.FC<Props> = ({
       {/* Challenge Instruction Footer */}
       <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-center gap-2 text-xs text-amber-400 font-semibold text-center">
         <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-        <span>انطق كلمة "{trap.word}" الآن بشكل سليم حتى يرضى مستر تشارلز ويجيب عن سؤالك!</span>
+        <span>انطق كلمة "{trap.word}" الآن بشكل سليم حتى يرضى مستر منقوري ويجيب عن سؤالك!</span>
       </div>
     </div>
   );

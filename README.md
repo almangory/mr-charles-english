@@ -1,8 +1,8 @@
-# 🎩 مستر تشارلز | Mr. Charles - مدرب الإنجليزية الفكاهي والتفاعلي
+# 🎩 مستر منقوري | Mr. Mangory - مدرب الإنجليزية الفكاهي والتفاعلي
 
-تطبيق ويب تفاعلي ذكي لتدريب وتطوير مهارات التحدث باللغة الإنجليزية في الزمن الحقيقي عبر شخصية أفاتار كرتونية ذات تعابير ومشاعر كوميدية (**مستر تشارلز - Mr. Charles**).
+تطبيق ويب تفاعلي ذكي لتدريب وتطوير مهارات التحدث باللغة الإنجليزية في الزمن الحقيقي عبر شخصية أفاتار كرتونية ذات تعابير ومشاعر كوميدية (**مستر منقوري - Mr. Mangory**).
 
-![Mr. Charles Banner](https://img.shields.io/badge/English%20Coach-Mr.%20Charles-amber?style=for-the-badge&logo=britishairways)
+![Mr. Mangory Banner](https://img.shields.io/badge/English%20Coach-Mr.%20Mangory-amber?style=for-the-badge&logo=britishairways)
 ![React 19](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
 ![Vite](https://img.shields.io/badge/Vite-8-purple?style=for-the-badge&logo=vite)

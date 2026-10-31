@@ -61,10 +61,10 @@ export function generateCharlesResponse(
   }
 
   // Greetings
-  if (query.includes('hello') || query.includes('hi') || query.includes('good morning') || query.includes('charles')) {
+  if (query.includes('hello') || query.includes('hi') || query.includes('good morning') || query.includes('mangory') || query.includes('charles')) {
     return {
       replyText:
-        "Jolly good day to you, my dear chap! Your greeting was polite and civilized. What grand topic shall we conquer today in the realm of the King's English?",
+        "Jolly good day to you, my dear chap! I am Mr. Mangory. Your greeting was polite and civilized. What grand topic shall we conquer today in the realm of the King's English?",
       emotion: 'proud'
     };
   }

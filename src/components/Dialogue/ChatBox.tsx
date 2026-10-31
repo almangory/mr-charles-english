@@ -63,7 +63,7 @@ export const ChatBox: React.FC<Props> = ({
               {/* Header Label */}
               <div className="flex items-center justify-between gap-3 text-[11px] mb-1 opacity-75">
                 <span className="font-semibold text-amber-400">
-                  {isCharles ? 'مستر تشارلز (Mr. Charles)' : 'أنت (You)'}
+                  {isCharles ? 'مستر منقوري (Mr. Mangory)' : 'أنت (You)'}
                 </span>
                 <span className="text-[10px] text-slate-400">
                   {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -92,11 +92,11 @@ export const ChatBox: React.FC<Props> = ({
                     sounds.playClick();
                     onReplaySpeech(msg.text);
                   }}
-                  title="استمع لنطق مستر تشارلز"
+                  title="استمع لنطق مستر منقوري"
                   className="mt-2 flex items-center gap-1 text-[10px] text-amber-400/80 hover:text-amber-300 font-medium transition-colors cursor-pointer"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>إعادة الاستماع بصوت مستر تشارلز</span>
+                  <span>إعادة الاستماع بصوت مستر منقوري</span>
                 </button>
               )}
             </div>
@@ -116,7 +116,7 @@ export const ChatBox: React.FC<Props> = ({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
               </span>
-              <span>مستر تشارلز يستمع إليك الآن...</span>
+              <span>مستر منقوري يستمع إليك الآن...</span>
             </div>
             <div className="font-english italic font-medium text-slate-100">
               {interimTranscript || 'تحدث بالإنجليزية الآن...'}

@@ -96,7 +96,7 @@ export const App: React.FC = () => {
         id: 'initial-' + Date.now(),
         sender: 'charles',
         text: sc.initialGreeting,
-        arabicTranslation: 'مستر تشارلز يرحب بك! تحدث معه بالإنجليزية وسيرد عليك بصوته مباشرة.',
+        arabicTranslation: 'مستر منقوري يرحب بك! تحدث معه بالإنجليزية وسيرد عليك بصوته مباشرة.',
         timestamp: new Date()
       };
       setMessages([greetingMsg]);
@@ -237,7 +237,7 @@ export const App: React.FC = () => {
           id: 'charles-' + Date.now(),
           sender: 'charles',
           text: finalReply,
-          arabicTranslation: 'رائع جداً! لقد نطقت الكلمة بشكل مثالي، وها هو مستر تشارلز يجيب عن سؤالك الأصلي!',
+          arabicTranslation: 'رائع جداً! لقد نطقت الكلمة بشكل مثالي، وها هو مستر منقوري يجيب عن سؤالك الأصلي!',
           timestamp: new Date()
         };
         setMessages((prev) => [...prev, charlesSuccessMsg]);
@@ -282,7 +282,7 @@ export const App: React.FC = () => {
         sender: 'charles',
         text: scoldingText,
         isCorrectionNotice: true,
-        arabicTranslation: `صدمة درامية لمستر تشارلز! لقد وقعت في فخ كلمة: ${detectedTrap.word}. انظر بطاقة التحدي بالأسفل لتصحيحها فوراً!`,
+        arabicTranslation: `صدمة درامية لمستر منقوري! لقد وقعت في فخ كلمة: ${detectedTrap.word}. انظر بطاقة التحدي بالأسفل لتصحيحها فوراً!`,
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, charlesAngryMsg]);
@@ -403,10 +403,10 @@ export const App: React.FC = () => {
               <span className="text-2xl sm:text-3xl">🎙️</span>
               <div>
                 <h3 className="font-bold text-xs sm:text-sm">
-                  المحادثة المباشرة مع مستر تشارلز جاهزة!
+                  المحادثة المباشرة مع مستر منقوري جاهزة!
                 </h3>
                 <p className="text-[11px] sm:text-xs text-slate-900 font-medium">
-                  اضغط لبدء الصوت المباشر وسينطق مستر تشارلز بصوته فوراً
+                  اضغط لبدء الصوت المباشر وسينطق مستر منقوري بصوته فوراً
                 </p>
               </div>
             </div>
@@ -444,10 +444,10 @@ export const App: React.FC = () => {
               {emotion === 'angry' && '🤬 غضب درامي كرتوني (نطق خاطئ!)'}
               {emotion === 'laughing' && '😂 قهقهة أرستقراطية مرحة!'}
               {emotion === 'proud' && '🎩 فخور جداً بنطقك السليم!'}
-              {emotion === 'listening' && '👂 مستر تشارلز يستمع لك الآن (تحدث بالإنجليزية)...'}
+              {emotion === 'listening' && '👂 مستر منقوري يستمع لك الآن (تحدث بالإنجليزية)...'}
               {emotion === 'thinking' && '🧐 يفكر في الإجابة...'}
-              {emotion === 'speaking' && '🗣️ مستر تشارلز ينطق بصوته الآن!'}
-              {emotion === 'idle' && '☕ مستر تشارلز في انتظارك'}
+              {emotion === 'speaking' && '🗣️ مستر منقوري ينطق بصوته الآن!'}
+              {emotion === 'idle' && '☕ مستر منقوري في انتظارك'}
             </span>
 
             {/* Live Audio Waves when Speaking */}
@@ -469,7 +469,7 @@ export const App: React.FC = () => {
                 speakCharles(lastCharlesSpeech, emotion);
               }
             }}
-            title="اضغط على مستر تشارلز لإعادة سماع كلامه بصوته"
+            title="اضغط على مستر منقوري لإعادة سماع كلامه بصوته"
             className="cursor-pointer group"
           >
             <MrCharlesAvatar
@@ -487,7 +487,7 @@ export const App: React.FC = () => {
               className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-amber-300/90 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span>أعد سماع كلام مستر تشارلز بصوته</span>
+              <span>أعد سماع كلام مستر منقوري بصوته</span>
             </button>
           )}
         </div>

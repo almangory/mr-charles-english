@@ -12,7 +12,7 @@ export async function askGeminiCharles(
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const systemInstruction = `
-You are Mr. Charles, a pompous, theatrical, hilarious aristocratic British English teacher.
+You are Mr. Mangory, a pompous, theatrical, hilarious aristocratic British English teacher.
 Appearance & Tone:
 - You wear a top hat, tweed jacket, mustache, and a monocle.
 - You speak with dramatic Victorian flair, witty sarcasm, and high comedic drama.
@@ -29,7 +29,7 @@ Return your reply naturally in English.
     },
     {
       role: 'model',
-      parts: [{ text: "Understood, my good chap! I am Mr. Charles, ready to inspect the King's English with theatrical precision and comedic strictness!" }]
+      parts: [{ text: "Understood, my good chap! I am Mr. Mangory, ready to inspect the King's English with theatrical precision and comedic strictness!" }]
     },
     ...chatHistory.map((h) => ({
       role: h.role,

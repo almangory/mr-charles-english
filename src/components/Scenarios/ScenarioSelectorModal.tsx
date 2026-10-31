@@ -28,10 +28,10 @@ export const ScenarioSelectorModal: React.FC<Props> = ({
             <span className="text-2xl">📚</span>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-100">
-                اختر موضوع المحادثة مع مستر تشارلز
+                اختر موضوع المحادثة مع مستر منقوري
               </h2>
               <p className="text-xs text-amber-400/80">
-                حدد السيناريو الذي ترغب في التدرب عليه اليوم
+                حدد السيناريو الذي ترغب في التدرب عليه مع مستر منقوري اليوم
               </p>
             </div>
           </div>

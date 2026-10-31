@@ -38,7 +38,7 @@ export const Navbar: React.FC<Props> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <h1 className="font-bold text-sm sm:text-base text-slate-100 tracking-wide">
-                مستر تشارلز
+                مستر منقوري
               </h1>
               <span className="hidden xs:inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
                 Live English Coach

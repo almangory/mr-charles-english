@@ -50,7 +50,7 @@ export const SettingsModal: React.FC<Props> = ({
             <span className="text-2xl">⚙️</span>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-100">
-                إعدادات مستر تشارلز الذكية
+                إعدادات مستر منقوري الذكية
               </h2>
               <p className="text-xs text-amber-400/80">
                 التحكم في الصوت ومحرك المحادثة المباشرة
@@ -75,7 +75,7 @@ export const SettingsModal: React.FC<Props> = ({
               <div className="flex items-center gap-2 text-amber-400">
                 <Volume2 className="w-4 h-4" />
                 <span className="font-bold text-xs sm:text-sm">
-                  صوت مستر تشارلز (المتصفح)
+                  صوت مستر منقوري (المتصفح)
                 </span>
               </div>
               <button
@@ -119,7 +119,7 @@ export const SettingsModal: React.FC<Props> = ({
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-2 text-amber-400 font-bold">
                 <Gauge className="w-4 h-4" />
-                <span>سرعة نطق مستر تشارلز</span>
+                <span>سرعة نطق مستر منقوري</span>
               </div>
               <span className="font-english font-bold text-slate-300">
                 {speechRate}x
