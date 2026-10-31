@@ -7,6 +7,7 @@ import { VoiceControls } from './components/Controls/VoiceControls';
 import { PronunciationChallengeCard } from './components/Challenge/PronunciationChallengeCard';
 import { ScenarioSelectorModal } from './components/Scenarios/ScenarioSelectorModal';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { LevelAndTrackModal } from './components/Levels/LevelAndTrackModal';
 import { Volume2, Radio, Play } from 'lucide-react';
 
 import { useSpeechSynthesis, useSpeechRecognition } from './services/speechEngine';
@@ -26,6 +27,14 @@ import {
 } from './services/conversationManager';
 import type { Message } from './services/conversationManager';
 import { askGeminiCharles } from './services/geminiService';
+import {
+  getLevelById,
+  getDomainById
+} from './services/levelsAndTracks';
+import type {
+  SpeakingLevel,
+  CareerDomain
+} from './services/levelsAndTracks';
 
 export const App: React.FC = () => {
   // Speech Hooks
@@ -49,7 +58,20 @@ export const App: React.FC = () => {
     error: speechError
   } = useSpeechRecognition();
 
-  // App State
+  // Levels (1 to 12) & Career Domain State
+  const [currentLevel, setCurrentLevel] = useState<SpeakingLevel>(() => {
+    const savedLevelId = parseInt(localStorage.getItem('mr_mangory_level_id') || '1', 10);
+    return getLevelById(savedLevelId);
+  });
+
+  const [currentDomain, setCurrentDomain] = useState<CareerDomain>(() => {
+    const savedDomainId = localStorage.getItem('mr_mangory_domain_id') || 'general';
+    return getDomainById(savedDomainId);
+  });
+
+  const [showLevelModal, setShowLevelModal] = useState(false);
+
+  // App General State
   const [emotion, setEmotion] = useState<AvatarEmotion>('idle');
   const [scenario, setScenario] = useState<ScenarioTopic>(CONVERSATION_SCENARIOS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -68,9 +90,9 @@ export const App: React.FC = () => {
     return parseInt(localStorage.getItem('mr_charles_streak') || '1', 10);
   });
 
-  // Settings State
+  // Settings State - Speed automatically adapts to Level's targetPacing!
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [speechRate, setSpeechRate] = useState(0.95);
+  const [speechRate, setSpeechRate] = useState(() => currentLevel.targetPacing);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showScenarioModal, setShowScenarioModal] = useState(false);
@@ -80,7 +102,17 @@ export const App: React.FC = () => {
     sounds.enabled = soundEnabled;
   }, [soundEnabled]);
 
-  // Persist points
+  // Persist levels & domains
+  useEffect(() => {
+    localStorage.setItem('mr_mangory_level_id', currentLevel.id.toString());
+    setSpeechRate(currentLevel.targetPacing);
+  }, [currentLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('mr_mangory_domain_id', currentDomain.id);
+  }, [currentDomain]);
+
+  // Persist points & streak
   useEffect(() => {
     localStorage.setItem('mr_charles_points', points.toString());
   }, [points]);
@@ -95,21 +127,20 @@ export const App: React.FC = () => {
       const greetingMsg: Message = {
         id: 'initial-' + Date.now(),
         sender: 'charles',
-        text: sc.initialGreeting,
-        arabicTranslation: 'مستر منقوري يرحب بك! تحدث معه بالإنجليزية وسيرد عليك بصوته مباشرة.',
+        text: currentLevel.initialGreeting || sc.initialGreeting,
+        arabicTranslation: `مستر منقوري جاهز لمستوى (${currentLevel.id}: ${currentLevel.titleAr}) في مجال (${currentDomain.nameAr}).`,
         timestamp: new Date()
       };
       setMessages([greetingMsg]);
-      setLastCharlesSpeech(sc.initialGreeting);
+      setLastCharlesSpeech(greetingMsg.text);
 
       if (shouldSpeakAloud) {
         setEmotion('speaking');
-        speak(sc.initialGreeting, {
+        speak(greetingMsg.text, {
           rate: speechRate,
           onStart: () => setEmotion('speaking'),
           onEnd: () => {
             setEmotion('idle');
-            // If in Live Mode, turn on mic automatically after greeting!
             if (isLiveMode) {
               setTimeout(() => {
                 sounds.playClick();
@@ -120,7 +151,7 @@ export const App: React.FC = () => {
         });
       }
     },
-    [speak, speechRate, isLiveMode, startListening]
+    [speak, speechRate, isLiveMode, startListening, currentLevel, currentDomain]
   );
 
   // On first load, display the message
@@ -162,7 +193,6 @@ export const App: React.FC = () => {
         onStart: () => setEmotion(targetEmotion),
         onEnd: () => {
           setEmotion('idle');
-          // If in Live Mode, automatically activate the mic for the user's turn!
           if (isLiveMode) {
             setTimeout(() => {
               sounds.playClick();
@@ -179,7 +209,7 @@ export const App: React.FC = () => {
   const handleStartLiveConversation = () => {
     unlockAudio();
     sounds.playClick();
-    speakCharles(scenario.initialGreeting, 'speaking');
+    speakCharles(currentLevel.initialGreeting || scenario.initialGreeting, 'speaking');
   };
 
   // Handle User Input (Speech or Text)
@@ -229,7 +259,12 @@ export const App: React.FC = () => {
         let finalReply = currentTrap.successQuote + followUp;
 
         if (currentPending) {
-          const answer = generateCharlesResponse(currentPending, scenario);
+          const answer = generateCharlesResponse(
+            currentPending,
+            scenario,
+            currentLevel.id,
+            currentDomain.id
+          );
           finalReply += answer.replyText;
         }
 
@@ -268,7 +303,7 @@ export const App: React.FC = () => {
     const detectedTrap = detectPronunciationTrap(userText);
 
     if (detectedTrap) {
-      // TRAP TRIGGERED! Enter dramatic comic rage
+      // TRAP TRIGGERED!
       sounds.playSteamWhistle();
       sounds.playMonoclePop();
 
@@ -287,12 +322,11 @@ export const App: React.FC = () => {
       };
       setMessages((prev) => [...prev, charlesAngryMsg]);
 
-      // Speak scolding aloud with angry emotion!
       speakCharles(scoldingText, 'angry');
       return;
     }
 
-    // 4. CLEAN PRONUNCIATION: REWARD & ANSWER ALOUD
+    // 4. CLEAN PRONUNCIATION: REWARD & ANSWER ALOUD ACCORDING TO LEVEL & DOMAIN
     sounds.playBellDing();
     setPoints((p) => p + 15);
 
@@ -307,12 +341,19 @@ export const App: React.FC = () => {
           messages.slice(-6).map((m) => ({
             role: m.sender === 'user' ? 'user' : 'model',
             parts: m.text
-          }))
+          })),
+          currentLevel.id,
+          currentDomain.id
         );
         replyText = geminiResult.reply;
         replyEmotion = geminiResult.emotion;
       } else {
-        const fallback = generateCharlesResponse(userText, scenario);
+        const fallback = generateCharlesResponse(
+          userText,
+          scenario,
+          currentLevel.id,
+          currentDomain.id
+        );
         replyText = fallback.replyText;
         replyEmotion = fallback.emotion;
       }
@@ -328,7 +369,12 @@ export const App: React.FC = () => {
       // Speak reply aloud!
       speakCharles(replyText, replyEmotion);
     } catch {
-      const fallback = generateCharlesResponse(userText, scenario);
+      const fallback = generateCharlesResponse(
+        userText,
+        scenario,
+        currentLevel.id,
+        currentDomain.id
+      );
       const charlesReplyMsg: Message = {
         id: 'charles-' + Date.now(),
         sender: 'charles',
@@ -345,6 +391,40 @@ export const App: React.FC = () => {
     setActiveTrap(null);
     setPendingUserQuery('');
     playGreeting(sc, isUnlocked);
+  };
+
+  const handleSelectLevel = (lvl: SpeakingLevel) => {
+    setCurrentLevel(lvl);
+    setActiveTrap(null);
+    setPendingUserQuery('');
+    setSpeechRate(lvl.targetPacing);
+
+    const levelGreetingMsg: Message = {
+      id: 'lvl-switch-' + Date.now(),
+      sender: 'charles',
+      text: lvl.initialGreeting,
+      arabicTranslation: `تم التبديل بنجاح إلى (${lvl.titleAr})! سرعة النطق تم ضبطها تلقائياً على ${lvl.targetPacing}x.`,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, levelGreetingMsg]);
+    if (isUnlocked) {
+      speakCharles(lvl.initialGreeting, 'proud');
+    }
+  };
+
+  const handleSelectDomain = (dom: CareerDomain) => {
+    setCurrentDomain(dom);
+    const domainMsg: Message = {
+      id: 'dom-switch-' + Date.now(),
+      sender: 'charles',
+      text: `Splendid! We have tuned our discourse to ${dom.nameEn}. Let us discuss ${dom.keywords.slice(0, 3).join(', ')} with professional distinction!`,
+      arabicTranslation: `تم اعتماد تخصص: (${dom.nameAr})! سيوظف مستر منقوري مصطلحات ومقابلات هذا المجال.`,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, domainMsg]);
+    if (isUnlocked) {
+      speakCharles(domainMsg.text, 'proud');
+    }
   };
 
   const handleListenSample = (sampleText: string) => {
@@ -366,6 +446,12 @@ export const App: React.FC = () => {
     });
   };
 
+  // Dynamic suggested prompts: combine level starters and career domain starters!
+  const dynamicPrompts = [
+    ...currentLevel.starterPrompts.slice(0, 3),
+    ...currentDomain.samplePrompts.slice(0, 2)
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-[#070D1E] text-slate-100 font-sans selection:bg-amber-500 selection:text-black">
       {/* 1. Header Navbar */}
@@ -385,10 +471,15 @@ export const App: React.FC = () => {
             startListening();
           }
         }}
+        currentLevelId={currentLevel.id}
+        currentLevelTitle={currentLevel.titleAr}
+        currentDomainIcon={currentDomain.icon}
+        currentDomainName={currentDomain.nameAr}
+        onOpenLevels={() => setShowLevelModal(true)}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-between gap-4">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-between gap-3 sm:gap-4">
         {/* Error notification if mic blocked */}
         {speechError && (
           <div className="w-full max-w-lg bg-rose-950/80 border border-rose-500/60 rounded-xl px-4 py-2.5 text-xs text-rose-200 text-center shadow-lg">
@@ -406,7 +497,7 @@ export const App: React.FC = () => {
                   المحادثة المباشرة مع مستر منقوري جاهزة!
                 </h3>
                 <p className="text-[11px] sm:text-xs text-slate-900 font-medium">
-                  اضغط لبدء الصوت المباشر وسينطق مستر منقوري بصوته فوراً
+                  المستوى الحالي: {currentLevel.titleAr} • {currentDomain.nameAr}
                 </p>
               </div>
             </div>
@@ -423,7 +514,17 @@ export const App: React.FC = () => {
         {/* 3. Avatar Presentation Stage */}
         <div className="flex flex-col items-center justify-center relative w-full pt-1 pb-1">
           {/* Avatar Emotion & Audio Indicator Tag */}
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+            {/* Level & Domain badge */}
+            <button
+              onClick={() => setShowLevelModal(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800/90 text-amber-300 border border-amber-500/40 hover:bg-slate-700 transition-all cursor-pointer shadow-sm"
+            >
+              <span>{currentDomain.icon}</span>
+              <span>{currentLevel.stageAr.split(' ')[0]} (مستوى {currentLevel.id})</span>
+              <span className="text-slate-400">⚡</span>
+            </button>
+
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-md ${
                 emotion === 'angry'
@@ -487,7 +588,7 @@ export const App: React.FC = () => {
               className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-amber-300/90 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span>أعد سماع كلام مستر منقوري بصوته</span>
+              <span>أعد سماع كلام مستر منقوري بصوته ({speechRate}x)</span>
             </button>
           )}
         </div>
@@ -518,7 +619,9 @@ export const App: React.FC = () => {
           {isLiveMode && !activeTrap && (
             <div className="text-center mb-1 text-[11px] text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>وضع التحدث التلقائي المباشر مفعل: تحدث وسيرد مستر تشارلز بصوته، ثم يستمع لك تلقائياً!</span>
+              <span>
+                المحادثة المباشرة مفعلة لمستوى {currentLevel.id}: تحدث وسيجيبك مستر منقوري بصوته، ثم يستمع لك تلقائياً!
+              </span>
             </div>
           )}
 
@@ -527,13 +630,23 @@ export const App: React.FC = () => {
             onStartListening={startListening}
             onStopListening={stopListening}
             onSendTextMessage={handleUserSpeech}
-            suggestedPrompts={scenario.suggestedPrompts}
+            suggestedPrompts={dynamicPrompts}
             disabled={isSpeaking}
           />
         </div>
       </main>
 
-      {/* Modals */}
+      {/* Level & Career Track Modal */}
+      <LevelAndTrackModal
+        isOpen={showLevelModal}
+        onClose={() => setShowLevelModal(false)}
+        selectedLevelId={currentLevel.id}
+        selectedDomainId={currentDomain.id}
+        onSelectLevel={handleSelectLevel}
+        onSelectDomain={handleSelectDomain}
+      />
+
+      {/* Scenario Modal */}
       <ScenarioSelectorModal
         isOpen={showScenarioModal}
         onClose={() => setShowScenarioModal(false)}
@@ -541,6 +654,7 @@ export const App: React.FC = () => {
         onSelectScenario={handleSelectScenario}
       />
 
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}

@@ -1,3 +1,5 @@
+import { getLevelById, getDomainById } from './levelsAndTracks';
+
 export interface GeminiResponse {
   reply: string;
   detectedMistakeWord?: string;
@@ -7,19 +9,47 @@ export interface GeminiResponse {
 export async function askGeminiCharles(
   apiKey: string,
   userMessage: string,
-  chatHistory: Array<{ role: 'user' | 'model'; parts: string }>
+  chatHistory: Array<{ role: 'user' | 'model'; parts: string }>,
+  levelId: number = 1,
+  domainId: string = 'general'
 ): Promise<GeminiResponse> {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
+  const currentLevel = getLevelById(levelId);
+  const currentDomain = getDomainById(domainId);
+
+  let pedagogicalGuideline = '';
+  if (currentLevel.id <= 4) {
+    pedagogicalGuideline = `
+- AUDIENCE: Young primary school child or early beginner (Level ${currentLevel.id}: ${currentLevel.titleEn}).
+- TONE & LANGUAGE: Extremely gentle, encouraging, and enthusiastic! Use simple, short, clear vocabulary (1 to 2 short sentences).
+- If the child makes a tiny error, do NOT be overly harsh; tease them gently with playful cartoon surprise and model the easy word.
+- Celebrate every small effort with clapping and joyful compliments ("Wonderful!", "Good job, little champion!")!`;
+  } else if (currentLevel.id <= 8) {
+    pedagogicalGuideline = `
+- AUDIENCE: Intermediate student (Level ${currentLevel.id}: ${currentLevel.titleEn}).
+- TONE & LANGUAGE: Friendly, engaging, gentlemanly English. Encourage forming complete sentences and stories (2 to 3 sentences).
+- React with theatrical comedic drama to common pronunciation traps, then explain clearly.`;
+  } else {
+    pedagogicalGuideline = `
+- AUDIENCE: Advanced, Collegiate or Executive Professional (Level ${currentLevel.id}: ${currentLevel.titleEn}).
+- SPECIALIZED DOMAIN: ${currentDomain.nameEn} (${currentDomain.nameAr}).
+- YOUR ROLE: ${currentDomain.charlesRole}.
+- TONE & LANGUAGE: High-level rhetoric, sophisticated vocabulary, demanding crisp articulation, debate-ready reasoning, and domain-specific terminology.
+- React with aristocratic outrage to any linguistic sloppiness, then challenge their intellect!`;
+  }
+
   const systemInstruction = `
-You are Mr. Mangory, a pompous, theatrical, hilarious aristocratic British English teacher.
-Appearance & Tone:
-- You wear a top hat, tweed jacket, mustache, and a monocle.
-- You speak with dramatic Victorian flair, witty sarcasm, and high comedic drama.
-- If the user made a pronunciation trap (like receipt, comfortable, dessert, subtle, clothes, vegetable, salmon, chaos, stomach, park vs bark) or said something awkward, react with DRAMATIC COMIC ANGER (steaming ears, monocle dropping) or LAUGHTER. Point out the mistake humorously, tell them how to say it correctly, and tell them to repeat it.
-- If the user spoke properly, praise them lavishly ("Splendid!", "Jolly good!", " Oxford worthy!").
-- Keep replies punchy, engaging, and spoken-friendly (2 to 4 sentences).
-Return your reply naturally in English.
+You are Mr. Mangory (مستر منقوري), a theatrical, hilarious aristocratic British English teacher.
+Appearance & Persona:
+- You wear a top hat, tweed jacket, mustache, and a golden monocle.
+- You have an expressive, comedic Victorian personality (dramatic gasps, monocle dropping when outraged, hearty laughs, and beamed pride).
+- LEVEL & SPECIALIZATION DIRECTIVE:
+${pedagogicalGuideline}
+- SPECIAL FIELD KEYWORDS TO WEAVE IN: ${currentDomain.keywords.join(', ')}.
+- PRONUNCIATION / GRAMMAR POLICY:
+If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B', dessert vs desert, comfortable with 4 syllables, salmon with 'L', clothes, Wednesday, etc.), react with comic shock, model the correct pronunciation, and instruct them to say it!
+- Keep response spoken-friendly (2-4 sentences max). Return response naturally in English.
 `;
 
   const contents = [
@@ -29,7 +59,11 @@ Return your reply naturally in English.
     },
     {
       role: 'model',
-      parts: [{ text: "Understood, my good chap! I am Mr. Mangory, ready to inspect the King's English with theatrical precision and comedic strictness!" }]
+      parts: [
+        {
+          text: `Understood! I am Mr. Mangory, calibrated precisely to Level ${currentLevel.id} (${currentLevel.titleEn}) in the domain of ${currentDomain.nameEn}!`
+        }
+      ]
     },
     ...chatHistory.map((h) => ({
       role: h.role,
@@ -48,8 +82,8 @@ Return your reply naturally in English.
       body: JSON.stringify({
         contents,
         generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 300
+          temperature: 0.75,
+          maxOutputTokens: 250
         }
       })
     });
@@ -59,16 +93,36 @@ Return your reply naturally in English.
     }
 
     const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Good heavens, my mind wandered for a moment! Pray repeat that?";
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Good heavens, my mind wandered for a moment! Pray repeat that?";
 
     // Detect emotion tone from reply
     let emotion: 'angry' | 'laughing' | 'proud' | 'idle' = 'idle';
     const lower = reply.toLowerCase();
-    if (lower.includes('heavens') || lower.includes('confound') || lower.includes('agony') || lower.includes('horror') || lower.includes('monocle')) {
+    if (
+      lower.includes('heavens') ||
+      lower.includes('confound') ||
+      lower.includes('agony') ||
+      lower.includes('horror') ||
+      lower.includes('monocle')
+    ) {
       emotion = 'angry';
-    } else if (lower.includes('ha!') || lower.includes('hilarious') || lower.includes('chuckle') || lower.includes('amusing')) {
+    } else if (
+      lower.includes('ha!') ||
+      lower.includes('hilarious') ||
+      lower.includes('chuckle') ||
+      lower.includes('amusing')
+    ) {
       emotion = 'laughing';
-    } else if (lower.includes('splendid') || lower.includes('magnificent') || lower.includes('bravo') || lower.includes('oxford')) {
+    } else if (
+      lower.includes('splendid') ||
+      lower.includes('magnificent') ||
+      lower.includes('bravo') ||
+      lower.includes('oxford') ||
+      lower.includes('champion') ||
+      lower.includes('wonderful')
+    ) {
       emotion = 'proud';
     }
 

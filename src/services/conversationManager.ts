@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti';
 import type { ScenarioTopic } from './pronunciationDictionary';
 import type { AvatarEmotion } from '../components/Avatar/MrCharlesAvatar';
+import { getLevelById, getDomainById } from './levelsAndTracks';
 
 export interface Message {
   id: string;
@@ -26,14 +27,126 @@ export function calculateRank(points: number): string {
   return "لورد الطلاقة الإنجليزية (Master of the King's English 👑)";
 }
 
-// Interactive Scenario Fallback Responses
+// Interactive Scenario & Level & Domain-Aware Fallback Responses
 export function generateCharlesResponse(
   userQuery: string,
-  _scenario?: ScenarioTopic
+  _scenario?: ScenarioTopic,
+  levelId: number = 1,
+  domainId: string = 'general'
 ): { replyText: string; emotion: AvatarEmotion } {
   const query = userQuery.toLowerCase();
+  const level = getLevelById(levelId);
+  const domain = getDomainById(domainId);
 
-  // Weather questions
+  // ================= 1. PRIMARY SCHOOL / EARLY KIDS (LEVELS 1 - 4) =================
+  if (level.id <= 4) {
+    if (query.includes('hello') || query.includes('hi') || query.includes('mangory')) {
+      return {
+        replyText: "Hello, my little superstar! It is so wonderful to hear your cheerful voice! Are you ready to play with English words?",
+        emotion: 'proud'
+      };
+    }
+    if (query.includes('red') || query.includes('blue') || query.includes('green') || query.includes('color') || query.includes('yellow')) {
+      return {
+        replyText: "Ooh! What a beautiful, bright color! Just like a sparkling rainbow! Can you tell me your other favorite color?",
+        emotion: 'proud'
+      };
+    }
+    if (query.includes('cat') || query.includes('dog') || query.includes('bird') || query.includes('puppy') || query.includes('animal')) {
+      return {
+        replyText: "Aha! Animals are amazing! A cat says meow, and a little puppy wags its tail! Do you have a pet at home?",
+        emotion: 'proud'
+      };
+    }
+    if (query.includes('apple') || query.includes('banana') || query.includes('food') || query.includes('milk') || query.includes('ice cream')) {
+      return {
+        replyText: "Yummy! That sounds so tasty and sweet! Fresh healthy food gives you big energy to learn and play!",
+        emotion: 'proud'
+      };
+    }
+    if (query.includes('car') || query.includes('toy') || query.includes('ball') || query.includes('game')) {
+      return {
+        replyText: "Yay! Playing games is so much fun! You are doing such a brilliant job speaking English!",
+        emotion: 'proud'
+      };
+    }
+    // Kids General Encouragement
+    const kidsPraise = [
+      "Good job, little champion! That was spoken so clearly and nicely! Tell me what else you like!",
+      "Hooray! You are learning so fast, my young friend! Can you say another sentence for Mr. Mangory?",
+      "Splendid! A big golden star for your wonderful English! Keep speaking proudly!"
+    ];
+    return {
+      replyText: kidsPraise[Math.floor(Math.random() * kidsPraise.length)],
+      emotion: 'proud'
+    };
+  }
+
+  // ================= 2. SPECIALIZED PROFESSIONAL DOMAINS (LEVELS 9 - 12) =================
+  if (level.id >= 9) {
+    if (domain.id === 'tech') {
+      if (query.includes('database') || query.includes('latency') || query.includes('cache') || query.includes('api')) {
+        return {
+          replyText: "A rigorous architectural inquiry! Optimizing database connection pooling and deploying edge KV caching dramatically reduces P99 latency. How do you handle cache invalidation across distributed nodes?",
+          emotion: 'proud'
+        };
+      }
+      return {
+        replyText: "Spoken like a seasoned software engineer! Writing scalable, decoupled microservices with comprehensive automated testing is the gold standard of modern engineering. Pray elaborate on your tech stack!",
+        emotion: 'proud'
+      };
+    }
+
+    if (domain.id === 'medicine') {
+      if (query.includes('patient') || query.includes('pain') || query.includes('symptom') || query.includes('treatment')) {
+        return {
+          replyText: "A crucial clinical scenario! Prioritizing differential diagnosis while ensuring empathetic patient communication is essential in emergency triage. What laboratory biomarkers would you investigate first?",
+          emotion: 'proud'
+        };
+      }
+      return {
+        replyText: "Remarkable clinical acumen! Precision in medical terminology paired with active listening saves lives. What clinical case study shall we dissect next?",
+        emotion: 'proud'
+      };
+    }
+
+    if (domain.id === 'business') {
+      if (query.includes('market') || query.includes('revenue') || query.includes('roi') || query.includes('customer') || query.includes('pitch')) {
+        return {
+          replyText: "Capital strategic analysis! Demonstrating strong unit economics and a scalable customer acquisition flywheel is what truly convinces top-tier venture capitalists. What is your projected runway?",
+          emotion: 'proud'
+        };
+      }
+      return {
+        replyText: "Sharp commercial intellect! In business negotiations, discovering the counterparty's unstated priorities yields the ultimate strategic leverage. Pray continue your proposal!",
+        emotion: 'proud'
+      };
+    }
+
+    if (domain.id === 'tourism') {
+      return {
+        replyText: "Exquisite hospitality! Discerning global travelers expect seamless white-glove concierge service and impeccable British etiquette. How do you tailor VIP itineraries for royal delegations?",
+        emotion: 'proud'
+      };
+    }
+
+    if (domain.id === 'law') {
+      return {
+        replyText: "A formidable legal argument! Ensuring bilateral enforceability and minimizing jurisdictional ambiguities under international arbitration treaties protects sovereign client interests. What precedents support your stance?",
+        emotion: 'proud'
+      };
+    }
+
+    if (domain.id === 'engineering') {
+      return {
+        replyText: "Robust structural analysis! Balancing tensile strength tolerances with seismic damping parameters is the hallmark of master architecture. What safety factor did your team calibrate for this design?",
+        emotion: 'proud'
+      };
+    }
+  }
+
+  // ================= 3. INTERMEDIATE & GENERAL CONVERSATION (LEVELS 5 - 8) =================
+  // Weather
   if (query.includes('weather') || query.includes('rain') || query.includes('sun')) {
     return {
       replyText:
@@ -42,7 +155,7 @@ export function generateCharlesResponse(
     };
   }
 
-  // Tea questions
+  // Tea
   if (query.includes('tea') || query.includes('milk') || query.includes('scone') || query.includes('earl grey')) {
     return {
       replyText:
@@ -51,7 +164,7 @@ export function generateCharlesResponse(
     };
   }
 
-  // Job interview / Career
+  // Job / Career
   if (query.includes('job') || query.includes('interview') || query.includes('hire') || query.includes('experience')) {
     return {
       replyText:
@@ -69,15 +182,6 @@ export function generateCharlesResponse(
     };
   }
 
-  // How are you
-  if (query.includes('how are you') || query.includes('how do you do')) {
-    return {
-      replyText:
-        "I am feeling exceptionally splendid, thank you! Sitting comfortably with my favorite book and piping hot tea. How fares your day, my ambitious student?",
-      emotion: 'proud'
-    };
-  }
-
   // Travel & London
   if (query.includes('london') || query.includes('train') || query.includes('ticket') || query.includes('hotel')) {
     return {
@@ -87,16 +191,7 @@ export function generateCharlesResponse(
     };
   }
 
-  // Food / Dining
-  if (query.includes('food') || query.includes('eat') || query.includes('dinner') || query.includes('lunch')) {
-    return {
-      replyText:
-        "Superb! If you are in London, a classic Sunday roast with Yorkshire pudding is essential! And remember: table manners reflect the soul!",
-      emotion: 'idle'
-    };
-  }
-
-  // Generic witty responses
+  // Default Intermediate Witty Responses
   const fallbacks = [
     {
       replyText:

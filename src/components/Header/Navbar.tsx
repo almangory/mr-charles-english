@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Flame, Settings, Volume2, VolumeX, BookOpen, Radio } from 'lucide-react';
+import { Crown, Flame, Settings, Volume2, VolumeX, BookOpen, Radio, Award } from 'lucide-react';
 import { sounds } from '../../services/soundEffects';
 
 interface Props {
@@ -13,6 +13,11 @@ interface Props {
   currentScenarioTitle: string;
   isLiveMode: boolean;
   onToggleLiveMode: () => void;
+  currentLevelId: number;
+  currentLevelTitle: string;
+  currentDomainIcon: string;
+  currentDomainName: string;
+  onOpenLevels: () => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -25,61 +30,85 @@ export const Navbar: React.FC<Props> = ({
   onOpenScenarios,
   currentScenarioTitle,
   isLiveMode,
-  onToggleLiveMode
+  onToggleLiveMode,
+  currentLevelId,
+  currentDomainIcon,
+  currentDomainName,
+  onOpenLevels
 }) => {
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#0B132B]/90 backdrop-blur-md border-b border-amber-500/20 px-3 sm:px-6 py-2.5">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
-        {/* Logo & Scenario Trigger */}
+    <header className="sticky top-0 z-30 w-full bg-[#0B132B]/90 backdrop-blur-md border-b border-amber-500/20 px-2 sm:px-6 py-2.5">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-1.5 sm:gap-4">
+        {/* Logo & Info */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 flex items-center justify-center shadow-lg text-lg sm:text-xl">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-300 flex items-center justify-center shadow-lg text-base sm:text-xl">
             🎩
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-bold text-sm sm:text-base text-slate-100 tracking-wide">
+              <h1 className="font-bold text-xs sm:text-base text-slate-100 tracking-wide">
                 مستر منقوري
               </h1>
-              <span className="hidden xs:inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
-                Live English Coach
+              <span className="hidden md:inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
+                12 Levels & Careers
               </span>
             </div>
-            {/* Active Scenario Pill Button */}
+            {/* Active Scenario Trigger */}
             <button
               onClick={() => {
                 sounds.playClick();
                 onOpenScenarios();
               }}
-              className="flex items-center gap-1 text-[11px] sm:text-xs text-amber-400/90 hover:text-amber-300 font-medium transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-[10px] sm:text-xs text-amber-400/90 hover:text-amber-300 font-medium transition-colors cursor-pointer"
             >
-              <BookOpen className="w-3 h-3 text-amber-400" />
-              <span className="truncate max-w-[110px] sm:max-w-xs">{currentScenarioTitle}</span>
+              <BookOpen className="w-3 h-3 text-amber-400 shrink-0" />
+              <span className="truncate max-w-[90px] xs:max-w-[120px] sm:max-w-xs">{currentScenarioTitle}</span>
               <span className="text-[10px] text-slate-400 underline">تغيير</span>
             </button>
           </div>
         </div>
 
-        {/* Live Conversation Mode Toggle Button */}
-        <div className="flex items-center gap-2">
+        {/* Center: 12-Level & Career Track Badge */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Level Pill */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              onOpenLevels();
+            }}
+            title="تغيير مستوى المخاطبة من 1 إلى 12 والمجال المهني"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 shadow-sm transition-all active:scale-95 cursor-pointer text-xs font-bold"
+          >
+            <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+            <span>مستوى {currentLevelId}</span>
+            <span className="text-slate-400 hidden xs:inline">|</span>
+            <span className="hidden xs:inline-flex items-center gap-1 text-[11px] font-medium text-slate-200">
+              <span>{currentDomainIcon}</span>
+              <span className="truncate max-w-[80px] sm:max-w-[110px]">{currentDomainName.split(' ')[0]}</span>
+            </span>
+          </button>
+
+          {/* Live Conversation Mode Toggle Button */}
           <button
             onClick={() => {
               sounds.playClick();
               onToggleLiveMode();
             }}
-            title="تبديل وضع المحادثة المباشرة التلقائية (تحدث ويجيبك بصوته ثم يستمع لك تلقائياً)"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
+            title="تبديل وضع المحادثة المباشرة التلقائية"
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer ${
               isLiveMode
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white ring-2 ring-emerald-400/50 shadow-emerald-900/50 animate-pulse'
-                : 'bg-slate-800/90 text-slate-300 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white ring-2 ring-emerald-400/50 shadow-emerald-900/50'
+                : 'bg-slate-800/90 text-slate-300 hover:text-amber-300 border border-slate-700'
             }`}
           >
-            <Radio className={`w-3.5 h-3.5 ${isLiveMode ? 'animate-spin' : ''}`} />
-            <span>{isLiveMode ? 'المحادثة الحية: مفعلة 🟢' : 'تفعيل المحادثة المباشرة'}</span>
+            <Radio className={`w-3.5 h-3.5 shrink-0 ${isLiveMode ? 'animate-pulse' : ''}`} />
+            <span className="hidden sm:inline">{isLiveMode ? 'محادثة حية 🟢' : 'تفعيل الحية'}</span>
+            <span className="sm:hidden">{isLiveMode ? 'حية 🟢' : 'تشغيل'}</span>
           </button>
         </div>
 
-        {/* Stats: Posh Points & Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Stats & Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {/* Points Pill */}
           <div
             title={`مستواك الحالي: ${rankTitle}`}
@@ -97,7 +126,7 @@ export const Navbar: React.FC<Props> = ({
           {/* Streak Pill */}
           <div
             title="مرات التدريب المستمر"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/90 border border-orange-500/40"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-slate-900/90 border border-orange-500/40"
           >
             <Flame className="w-3.5 h-3.5 text-orange-400" />
             <span className="font-english font-bold text-xs sm:text-sm text-orange-300">
