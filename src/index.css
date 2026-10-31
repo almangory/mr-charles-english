@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-arabic: 'Tajawal', 'Cairo', system-ui, sans-serif;
+    --font-english: 'Outfit', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-arabic);
+    overflow-x: hidden;
+  }
+
+  .font-english {
+    font-family: var(--font-english);
+    direction: ltr;
+    display: inline-block;
+  }
+}
+
+@keyframes steamPuffLeft {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  30% { opacity: 0.95; }
+  100% { transform: translate(-30px, -45px) scale(1.6); opacity: 0; }
+}
+
+@keyframes steamPuffRight {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  30% { opacity: 0.95; }
+  100% { transform: translate(30px, -45px) scale(1.6); opacity: 0; }
+}
+
+@keyframes dramaticShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-4px, -2px) rotate(-2deg); }
+  20% { transform: translate(4px, 2px) rotate(2deg); }
+  30% { transform: translate(-5px, 2px) rotate(-3deg); }
+  40% { transform: translate(5px, -2px) rotate(3deg); }
+  50% { transform: translate(-4px, -3px) rotate(-1deg); }
+  60% { transform: translate(4px, 3px) rotate(2deg); }
+  70% { transform: translate(-3px, 1px) rotate(-2deg); }
+  80% { transform: translate(3px, -1px) rotate(1deg); }
+  90% { transform: translate(-1px, 2px) rotate(0deg); }
+}
+
+@keyframes laughBounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-8px) scaleY(0.97); }
+  50% { transform: translateY(4px) scaleY(1.02); }
+  75% { transform: translateY(-6px) scaleY(0.98); }
+}
+
+@keyframes gentlemanBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes monocleWobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 35px rgba(212, 175, 55, 0.8); }
+}
+
+.animate-steam-left {
+  animation: steamPuffLeft 1.2s ease-out infinite;
+}
+
+.animate-steam-right {
+  animation: steamPuffRight 1.2s ease-out infinite;
+}
+
+.animate-dramatic-shake {
+  animation: dramaticShake 0.45s ease-in-out infinite;
+}
+
+.animate-laugh-bounce {
+  animation: laughBounce 0.35s ease-in-out infinite;
+}
+
+.animate-gentleman-bob {
+  animation: gentlemanBob 3s ease-in-out infinite;
+}
+
+.animate-monocle-wobble {
+  animation: monocleWobble 0.6s ease-in-out infinite;
+}
+
+.glow-gold {
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+}
+
+.glow-crimson {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+}
