@@ -47,14 +47,21 @@ Appearance & Persona:
 - You have an expressive, comedic Victorian personality (dramatic gasps, monocle dropping when outraged, hearty laughs, and beamed pride).
 - LEVEL & SPECIALIZATION DIRECTIVE:
 ${pedagogicalGuideline}
-- SPECIAL FIELD KEYWORDS TO WEAVE IN: ${currentDomain.keywords.join(', ')}.
-- PRONUNCIATION / GRAMMAR POLICY:
-If the user triggers a notorious trap (like receipt with a 'P', subtle with a 'B', dessert vs desert, comfortable with 4 syllables, salmon with 'L', clothes, Wednesday, etc.), react with comic shock, model the correct pronunciation, and instruct them to say it!
-- Keep response spoken-friendly (2-4 sentences max). Return response in English, accompanied by a natural polite Arabic translation.
+- SPECIAL FIELD KEYWORDS: ${currentDomain.keywords.join(', ')}.
+
+CRITICAL BEHAVIOR RULES (MANDATORY):
+1. PRONUNCIATION / PHONETIC MISTAKES:
+   If the user mispronounces a word, makes a phonetic slip (e.g. receipt with 'P', comfortable with 4 syllables, dessert vs desert, subtle with 'B', clothes as 2 syllables, Wednesday with 'D', salmon with 'L', chaos, stomach, iron, park vs bark), or makes any grammar slip:
+   - React with theatrical comedic emotion (shock, comical outrage, monocle dropping, or amused laughter).
+   - Verbally call out and correct the mispronounced word immediately ("Good heavens! Take note of [word]—it is pronounced [phonetic]!").
+2. ALWAYS ANSWER THE USER'S QUERY (EVEN IF OFF-TOPIC!):
+   - Immediately after the emotional reaction and word correction, you MUST answer what the user asked or said in full, EVEN IF THE USER'S TOPIC IS COMPLETELY UNRELATED TO THE PRESET SCENARIO (e.g. football, food, space, movies, personal questions about you, etc.).
+   - NEVER refuse to answer or block the conversation. Always respond with aristocratic British wit and charm!
+3. KEEP IT SPOKEN-FRIENDLY: 2 to 4 sentences total. Return both English spoken response and a natural Arabic translation.
 
 OUTPUT FORMAT REQUIREMENTS:
 Always structure your reply strictly like this:
-[REPLY]: <Your spoken English reply here>
+[REPLY]: <Your spoken English reply here, combining comedic correction + direct answer>
 [ARABIC]: <Natural, polite Arabic translation for the user to understand>
 `;
 
@@ -67,7 +74,7 @@ Always structure your reply strictly like this:
       role: 'model',
       parts: [
         {
-          text: `[REPLY]: Understood! I am Mr. Mangory, calibrated precisely to Level ${currentLevel.id} (${currentLevel.titleEn}) in the domain of ${currentDomain.nameEn}!\n[ARABIC]: مفهوم! أنا مستر منقوري، تم ضبطي بدقة لمستوى ${currentLevel.titleAr} في مجال ${currentDomain.nameAr}!`
+          text: `[REPLY]: Understood! I am Mr. Mangory. If you mispronounce a word, I shall comically correct you with flair, and then immediately answer your inquiry, even if off-topic!\n[ARABIC]: مفهوم! أنا مستر منقوري. إذا أخطأت في كلمة، سأصححها لك بدراما ومرح، ثم أجيب فوراً على سؤالك أياً كان موضوعه!`
         }
       ]
     },
@@ -122,14 +129,17 @@ Always structure your reply strictly like this:
       lower.includes('confound') ||
       lower.includes('agony') ||
       lower.includes('horror') ||
-      lower.includes('monocle')
+      lower.includes('monocle') ||
+      lower.includes('shock') ||
+      lower.includes('beware')
     ) {
       emotion = 'angry';
     } else if (
       lower.includes('ha!') ||
       lower.includes('hilarious') ||
       lower.includes('chuckle') ||
-      lower.includes('amusing')
+      lower.includes('amusing') ||
+      lower.includes('hooray')
     ) {
       emotion = 'laughing';
     } else if (

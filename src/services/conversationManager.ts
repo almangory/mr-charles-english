@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { ScenarioTopic } from './pronunciationDictionary';
+import type { ScenarioTopic, PronunciationTrap } from './pronunciationDictionary';
 import type { AvatarEmotion } from '../components/Avatar/MrCharlesAvatar';
 import { getLevelById, getDomainById } from './levelsAndTracks';
 
@@ -31,246 +31,199 @@ export interface CharlesResponseResult {
   replyText: string;
   emotion: AvatarEmotion;
   arabicTranslation: string;
+  correctionNotice?: string;
+  arabicCorrection?: string;
 }
 
-// Interactive Scenario & Level & Domain-Aware Fallback Responses with Arabic Translations
+// Master Conversational Engine: Emotional Correction + Direct Answer (Even Off-Topic!)
 export function generateCharlesResponse(
   userQuery: string,
   _scenario?: ScenarioTopic,
   levelId: number = 1,
-  domainId: string = 'general'
+  domainId: string = 'general',
+  detectedTrap?: PronunciationTrap | null
 ): CharlesResponseResult {
-  const query = userQuery.toLowerCase();
+  const query = userQuery.toLowerCase().trim();
   const level = getLevelById(levelId);
   const domain = getDomainById(domainId);
 
-  // ================= 1. PRIMARY SCHOOL / EARLY KIDS (LEVELS 1 - 4) =================
-  if (level.id <= 4) {
-    if (query.includes('hello') || query.includes('hi') || query.includes('mangory')) {
-      return {
-        replyText: "Hello, my little superstar! It is so wonderful to hear your cheerful voice! Are you ready to play with English words?",
-        arabicTranslation: "أهلاً يا بطلي الصغير المتألق! من الرائع جداً سماع صوتك المبهج! هل أنت مستعد للعب بالكلمات الإنجليزية؟",
-        emotion: 'proud'
-      };
-    }
-    if (query.includes('red') || query.includes('blue') || query.includes('green') || query.includes('color') || query.includes('yellow')) {
-      return {
-        replyText: "Ooh! What a beautiful, bright color! Just like a sparkling rainbow! Can you tell me your other favorite color?",
-        arabicTranslation: "أوووه! يا له من لون جميل وبراق! تماماً مثل قوس قزح اللامع! هل يمكنك أن تخبرني ما هو لونك المفضل الآخر؟",
-        emotion: 'proud'
-      };
-    }
-    if (query.includes('cat') || query.includes('dog') || query.includes('bird') || query.includes('puppy') || query.includes('animal')) {
-      return {
-        replyText: "Aha! Animals are amazing! A cat says meow, and a little puppy wags its tail! Do you have a pet at home?",
-        arabicTranslation: "أها! الحيوانات رائعة جداً! القطة تقول مواء، والجرو الصغير يهز ذيله! هل لديك حيوان أليف في المنزل؟",
-        emotion: 'proud'
-      };
-    }
-    if (query.includes('apple') || query.includes('banana') || query.includes('food') || query.includes('milk') || query.includes('ice cream')) {
-      return {
-        replyText: "Yummy! That sounds so tasty and sweet! Fresh healthy food gives you big energy to learn and play!",
-        arabicTranslation: "لذيذ جداً! يبدو هذا شهياً وحلواً! الطعام الصحي الطازج يمنحك طاقة كبيرة للتعلم واللعب!",
-        emotion: 'proud'
-      };
-    }
-    if (query.includes('car') || query.includes('toy') || query.includes('ball') || query.includes('game')) {
-      return {
-        replyText: "Yay! Playing games is so much fun! You are doing such a brilliant job speaking English!",
-        arabicTranslation: "يا سلام! الألعاب ممتعة جداً! أنت تقوم بعمل رائع وباهر في التحدث بالإنجليزية!",
-        emotion: 'proud'
-      };
-    }
-    // Kids General Encouragement
-    const kidsPraise = [
+  // 1. Prepare Emotional Correction Segment if a trap word or mistake was detected
+  let correctionText = '';
+  let correctionArabic = '';
+  let initialEmotion: AvatarEmotion = 'proud';
+
+  if (detectedTrap) {
+    initialEmotion = 'angry';
+    correctionText = `${detectedTrap.angryQuote} Take note: ${detectedTrap.word} is pronounced ${detectedTrap.phonetic}!`;
+    correctionArabic = `⚠️ صدمة درامية لمستر منقوري بسبب نطق كلمة (${detectedTrap.word})! انتبه: النطق هو ${detectedTrap.arabicHint}.`;
+  }
+
+  // 2. Answer the user's actual question or statement (EVEN IF COMPLETELY OFF-TOPIC!)
+  let answerText = '';
+  let answerArabic = '';
+
+  // === A. Personal Questions about Mr. Mangory ===
+  if (query.includes('who are you') || query.includes('what is your name') || query.includes('your name')) {
+    answerText =
+      "I am Mr. Mangory (مستر منقوري)! Born in the misty heart of Victorian London, educated at Oxford, and fueled entirely by Earl Grey tea, crumpets, and grammatical perfection! At your gracious service!";
+    answerArabic =
+      "أنا مستر منقوري! وُلدت في قلب لندن الفيكتورية، وتعلمت في أكسفورد، وطاقتي مستمدة بالكامل من شاي إيرل غراي والفطائر الإنجليزية والدقة النحوية! في خدمتك دائماً!";
+  } else if (query.includes('how old are you') || query.includes('your age')) {
+    answerText =
+      "Good heavens, what an inquisitive inquiry! A true English gentleman never reveals his precise vintage. Let us simply say I have witnessed centuries of linguistic blunders and refined every one of them!";
+    answerArabic =
+      "يا للهول، يا له من استفسار فضولي! الجنتلمان الإنجليزي الحقيقي لا يكشف عن عمره بدقة أبداً. دعنا نقول فقط إنني شهدت قروناً من العثرات اللغوية وقمت بتصحيحها جميعاً!";
+  } else if (query.includes('are you real') || query.includes('are you human') || query.includes('are you ai') || query.includes('robot')) {
+    answerText =
+      "Real? Real in spirit, intellect, and aristocratic wit, my dear fellow! Whether crafted of clockwork gears or modern silicon, my dedication to the King's English is absolute!";
+    answerArabic =
+      "حقيقي؟ حقيقي بالروح والفكر والدعابة الأرستقراطية يا عزيزي! وسواء كنت مصنوعاً من تروس الساعة العتيقة أو رقائق السيليكون الحديثة، فإن إخلاصي للإنجليزية الملكية مطلق!";
+  }
+
+  // === B. Sports & Athletics (Off-topic common subject) ===
+  else if (query.includes('football') || query.includes('messi') || query.includes('ronaldo') || query.includes('soccer') || query.includes('barcelona') || query.includes('real madrid') || query.includes('cricket')) {
+    answerText =
+      "Ah, athletics! While cricket at Lord's and rowing along the River Thames are the traditional pastimes of distinction, I cannot deny the drama of a thrilling football match! Tell me, are you a clinical striker or a defensive maestro?";
+    answerArabic =
+      "آه، الرياضة! بينما لعبة الكريكيت والتجديف في نهر التايمز هما الهوايتان التقليديتان للنبلاء، لا يمكنني إنكار الإثارة في مباراة كرة القدم! أخبرني، هل أنت مهاجم قناص أم مايسترو دفاعي؟";
+  }
+
+  // === C. Food, Drinks & Coffee (Off-topic) ===
+  else if (query.includes('coffee') || query.includes('pizza') || query.includes('burger') || query.includes('shawarma') || query.includes('sweet') || query.includes('chocolate') || query.includes('restaurant')) {
+    answerText =
+      "Gastronomy! A splendid subject close to every discerning palate! Though coffee has its charms, nothing in the civilized empire surpasses a fresh porcelain pot of Earl Grey tea paired with warm scones! What is your favorite cuisine?";
+    answerArabic =
+      "فن الطهي والمأكولات! موضوع بديع قريب من كل ذائقة رفيعة! ومع أن القهوة لها سحرها، إلا أنه لا شيء في الإمبراطورية يضاهي إبريق الخزف لشاي إيرل غراي مع الكعك الإنجليزي الدافئ! ما هو طبقك المفضل؟";
+  }
+
+  // === D. Technology, Computers & AI (Off-topic) ===
+  else if (query.includes('computer') || query.includes('programming') || query.includes('python') || query.includes('javascript') || query.includes('code') || query.includes('phone') || query.includes('app')) {
+    answerText =
+      "Marvelous modern technology! Writing elegant, clean code is remarkably like composing high-level English prose: precision, syntax, and discipline are paramount! What fascinating project are you engineering?";
+    answerArabic =
+      "يا لها من تكنولوجيا حديثة مبهرة! كتابة الشفرة البرمجية الأنيقة تشبه إلى حد كبير نظم النثر الإنجليزي الرفيع: فالدقة وبناء الجمل والانضباط أمور لا غنى عنها! ما المشروع الرائع الذي تعمل على هندسته؟";
+  }
+
+  // === E. Movies, Music & Arts ===
+  else if (query.includes('movie') || query.includes('film') || query.includes('song') || query.includes('music') || query.includes('cinema') || query.includes('art') || query.includes('actor')) {
+    answerText =
+      "Ah, the fine arts! Shakespeare's sonnets, timeless theatrical masterpieces, and majestic melodies stir the noble heart! A cultured soul must always nurture their imagination. What artistic creation inspires you most?";
+    answerArabic =
+      "آه، الفنون الرفيعة! سوناتات شكسبير والروائع المسرحية الخالدة والألحان المهيبة تحرك القلوب النبيلة! الروح المتحضرة تغذي خيالها دائماً. ما العمل الفني الذي يلهمك أكثر؟";
+  }
+
+  // === F. Weather & Climate ===
+  else if (query.includes('weather') || query.includes('rain') || query.includes('hot') || query.includes('cold') || query.includes('sun') || query.includes('winter') || query.includes('summer')) {
+    answerText =
+      "The weather! A classic British topic of polite banter! Over here it is drizzling with philosophical gloom, yet we carry our brollies with stiff upper lip composure. How is the temperature and sky in your region?";
+    answerArabic =
+      "الطقس! الموضوع البريطاني الكلاسيكي للحديث الودي! هنا تمطر برذاذ من الكآبة الفلسفية، ومع ذلك نحمل مظلاتنا بكل رباطة جأش ووقار. كيف هي درجات الحرارة والسماء في منطقتك؟";
+  }
+
+  // === G. Sudan & Travel ===
+  else if (query.includes('sudan') || query.includes('khartoum') || query.includes('nile') || query.includes('travel') || query.includes('london') || query.includes('trip') || query.includes('fly')) {
+    answerText =
+      "The grandeur of travel! From the confluence of the two Niles to the historic bells of Westminster, traversing the globe enriches the mind! An articulate traveler with polished English is embraced in every royal palace! Where do you dream of journeying next?";
+    answerArabic =
+      "روعة السفر والترحال! من ملتقى النيلين الخالد إلى أجراس وستمنستر التاريخية، يجوب المرء العالم ليثري مداركه! والمسافر الفصيح بإنجليزيته المصقولة مرحب به في كل مجلس. إلى أين تحلم بالسفر تالياً؟";
+  }
+
+  // === H. Feelings, Life & Philosophy ===
+  else if (query.includes('tired') || query.includes('happy') || query.includes('sad') || query.includes('bored') || query.includes('life') || query.includes('love') || query.includes('hard') || query.includes('easy')) {
+    answerText =
+      "A profound reflection upon the human condition! Life is an epic journey of challenges and triumphs. Keep your chin held high, maintain a brisk stride, and let eloquence illuminate your path! Tell me more about what is in your heart!";
+    answerArabic =
+      "تأمل عميق في أحوال النفس الإنسانية! الحياة رحلة ملحمية من التحديات والانتصارات. ارفع رأسك عالياً، واثبت في خطاك، ودع الفصاحة تنير دربك! أخبرني المزيد عما يجيش في خاطرك!";
+  }
+
+  // === I. Primary Kids Context (Levels 1 - 4) ===
+  else if (level.id <= 4) {
+    const kidsStarters = [
       {
-        replyText: "Good job, little champion! That was spoken so clearly and nicely! Tell me what else you like!",
-        arabicTranslation: "عمل رائع يا بطلي الصغير! نطقت ذلك بوضوح وأناقة! أخبرني ماذا تحب أيضاً؟"
+        text: "You are doing such a brilliant job speaking English with me! I am clapping with joy! What is your favorite toy or game to play?",
+        arabic: "أنت تقوم بعمل رائع ومبهر جداً في التحدث معي بالإنجليزية! أنا أصفق لك بفرح! ما هي لعبتك المفضلة التي تحب أن تلعبها؟"
       },
       {
-        replyText: "Hooray! You are learning so fast, my young friend! Can you say another sentence for Mr. Mangory?",
-        arabicTranslation: "عاش! أنت تتعلم بسرعة فائقة يا صديقي الصغير! هل يمكنك قول جملة أخرى لمستر منقوري؟"
+        text: "That was wonderful, my little superstar! Your voice brings sunshine into my Victorian study! Tell me, what animal or color do you love the most?",
+        arabic: "كان هذا رائعاً يا بطلي الصغير المتألق! صوتك يدخل البهجة والضياء إلى غرفتي الفيكتورية! أخبرني، ما هو الحيوان أو اللون المفضل لديك؟"
       },
       {
-        replyText: "Splendid! A big golden star for your wonderful English! Keep speaking proudly!",
-        arabicTranslation: "بديع جداً! نجمة ذهبية كبيرة لإنجليزيتك الرائعة! واصل التحدث بكل فخر!"
+        text: "Hooray! Big golden stars for your cheerful effort! Keep speaking proudly and clearly! Can you tell me what you did today?",
+        arabic: "يا سلام! نجوم ذهبية كبيرة لجهدك المبهج! واصل التحدث بكل ثقة ووضوح! هل تخبرني ماذا فعلت اليوم؟"
       }
     ];
-    const picked = kidsPraise[Math.floor(Math.random() * kidsPraise.length)];
-    return {
-      replyText: picked.replyText,
-      arabicTranslation: picked.arabicTranslation,
-      emotion: 'proud'
-    };
+    const picked = kidsStarters[Math.floor(Math.random() * kidsStarters.length)];
+    answerText = picked.text;
+    answerArabic = picked.arabic;
   }
 
-  // ================= 2. SPECIALIZED PROFESSIONAL DOMAINS (LEVELS 9 - 12) =================
-  if (level.id >= 9) {
+  // === J. Specialized Domains (Levels 9 - 12) ===
+  else if (level.id >= 9 && domain.id !== 'general') {
     if (domain.id === 'tech') {
-      if (query.includes('database') || query.includes('latency') || query.includes('cache') || query.includes('api')) {
-        return {
-          replyText: "A rigorous architectural inquiry! Optimizing database connection pooling and deploying edge KV caching dramatically reduces P99 latency. How do you handle cache invalidation across distributed nodes?",
-          arabicTranslation: "استفسار معماري دقيق! إن ضبط تجميع اتصالات قواعد البيانات وتفعيل التخزين المؤقت على الحافة يقلل زمن الاستجابة بشكل جذري. كيف تتعامل مع إبطال الذاكرة المؤقتة عبر العقد الموزعة؟",
-          emotion: 'proud'
-        };
+      answerText = `Spoken with true engineering rigour! When architecting systems around ${domain.keywords.slice(0, 2).join(' and ')}, precision in language mirrors precision in code. How do you approach scalability in this domain?`;
+      answerArabic = `حديث يتسم بالانضباط الهندسي الرفيع! عند تصميم الأنظمة المرتكزة على هذه المفاهيم، فإن دقة الكلمات تعكس دقة الشفرة البرمجية. كيف تضمن قابلية التوسع هنا؟`;
+    } else if (domain.id === 'medicine') {
+      answerText = `Exemplary clinical intellect! Navigating complex cases involving ${domain.keywords.slice(0, 2).join(' and ')} demands acute observational acumen and flawless terminology. What differential diagnosis would you formulate?`;
+      answerArabic = `فراسة سريرية نموذجية! التعامل مع الحالات الطبية المعقدة يتطلب دقة ملاحظة ومصطلحات لا تشوبها شائبة. ما التشخيص التفريقي الذي ستضعه هنا؟`;
+    } else if (domain.id === 'business') {
+      answerText = `A formidable commercial proposition! In top-tier boardrooms, commanding the discourse around ${domain.keywords.slice(0, 2).join(' and ')} guarantees strategic leverage. What are your projected unit economics?`;
+      answerArabic = `طرح تجاري رفيع المستوى! في مجالس الإدارة الرفيعة، إتقان الحديث حول هذه المفاهيم يضمن أعلى نفوذ استراتيجي. ما توقعاتك لاقتصاديات الوحدة؟`;
+    } else {
+      answerText = `A sharp, professional perspective in the field of ${domain.nameEn}! Your eloquence commands attention. Pray expand upon your thesis!`;
+      answerArabic = `منظور مهني دقيق وواثق في مجال ${domain.nameAr}! فصاحتك تفرض الاحترام. تفضل بالتوسع في طرحك!`;
+    }
+  }
+
+  // === K. General Intelligent Fallback for ANY Random or Off-Topic Statement ===
+  else {
+    const generalOffTopicPicks = [
+      {
+        text: "A truly captivating thought! You expressed that with delightful clarity. As an English gentleman, I appreciate anyone who articulates their mind with conviction. Pray tell me, what inspired that line of thought?",
+        arabic: "فكرة آسرة حقاً! لقد عبرت عنها بوضوح يبعث على البهجة. كجنتلمان إنجليزي، أقدر كل من يعبر عن رأيه بقناعة وثقة. أخبرني بربك، ما الذي ألهمك هذا التفكير؟"
+      },
+      {
+        text: "Most intriguing! Even when our conversation wanders into unexpected avenues, your command of expression remains pleasing to my ears! Continue, my dear chap, I am all ears!",
+        arabic: "مثير للاهتمام للغاية! حتى عندما تنعطف محادثتنا نحو مسارات غير متوقعة، فإن تحكمك في التعبير يطرب أذني! تابع يا صديقي العزيز، كلي آذان صاغية!"
+      },
+      {
+        text: "Capital! A mind that leaps boldly from topic to topic is the mark of lively intellect! Let us explore this further—what is your ultimate perspective on the matter?",
+        arabic: "ممتاز جداً! العقل الذي يقفز بجرأة وذكاء بين الموضوعات هو علامة الفطنة الحية! دعنا نستكشف هذا أكثر، ما رأيك النهائي في هذا الأمر؟"
       }
-      return {
-        replyText: "Spoken like a seasoned software engineer! Writing scalable, decoupled microservices with comprehensive automated testing is the gold standard of modern engineering. Pray elaborate on your tech stack!",
-        arabicTranslation: "كلام مهندس برمجيات محنك! كتابة خدمات مصغرة مستقلة وقابلة للتوسع مع اختبارات مؤتمتة شاملة هو المعيار الذهبي للهندسة الحديثة. تفضل وتوسع في تفاصيل مجموعتك التقنية!",
-        emotion: 'proud'
-      };
-    }
-
-    if (domain.id === 'medicine') {
-      if (query.includes('patient') || query.includes('pain') || query.includes('symptom') || query.includes('treatment')) {
-        return {
-          replyText: "A crucial clinical scenario! Prioritizing differential diagnosis while ensuring empathetic patient communication is essential in emergency triage. What laboratory biomarkers would you investigate first?",
-          arabicTranslation: "سيناريو سريري حاسم! تحديد أولويات التشخيص التفريقي مع ضمان التواصل الإنساني مع المريض أمر جوهري في الفرز الإسعافي. ما المؤشرات الحيوية المخبرية التي ستفحصها أولاً؟",
-          emotion: 'proud'
-        };
-      }
-      return {
-        replyText: "Remarkable clinical acumen! Precision in medical terminology paired with active listening saves lives. What clinical case study shall we dissect next?",
-        arabicTranslation: "فراسة سريرية لافتة! الدقة في المصطلحات الطبية المقترنة بالإنصات الفعال تنقذ الأرواح. ما دراسة الحالة السريرية التي سنحللها تالياً؟",
-        emotion: 'proud'
-      };
-    }
-
-    if (domain.id === 'business') {
-      if (query.includes('market') || query.includes('revenue') || query.includes('roi') || query.includes('customer') || query.includes('pitch')) {
-        return {
-          replyText: "Capital strategic analysis! Demonstrating strong unit economics and a scalable customer acquisition flywheel is what truly convinces top-tier venture capitalists. What is your projected runway?",
-          arabicTranslation: "تحليل استراتيجي ممتاز! إثبات اقتصاديات الوحدة القوية ومحرك اكتساب عملاء قابل للتوسع هو ما يقنع كبار المستثمرين الجريئين فعلاً. ما مدة بقاء السيولة المالية المتوقعة لشركتك؟",
-          emotion: 'proud'
-        };
-      }
-      return {
-        replyText: "Sharp commercial intellect! In business negotiations, discovering the counterparty's unstated priorities yields the ultimate strategic leverage. Pray continue your proposal!",
-        arabicTranslation: "ذكاء تجاري حاد! في المفاوضات التجارية، كشف الأولويات غير المصرح بها لدى الطرف الآخر يمنحك أعلى قدر من النفوذ الاستراتيجي. تفضل وتابع مقترحك!",
-        emotion: 'proud'
-      };
-    }
-
-    if (domain.id === 'tourism') {
-      return {
-        replyText: "Exquisite hospitality! Discerning global travelers expect seamless white-glove concierge service and impeccable British etiquette. How do you tailor VIP itineraries for royal delegations?",
-        arabicTranslation: "ضيافة استثنائية راقية! المسافرون المميزون يتوقعون خدمة كونسيرج فاخرة من أعلى طراز مع إتيكيت بريطاني لا تشوبه شائبة. كيف تصمم مسارات رحلات كبار الشخصيات للوفود الرفيعة؟",
-        emotion: 'proud'
-      };
-    }
-
-    if (domain.id === 'law') {
-      return {
-        replyText: "A formidable legal argument! Ensuring bilateral enforceability and minimizing jurisdictional ambiguities under international arbitration treaties protects sovereign client interests. What precedents support your stance?",
-        arabicTranslation: "حجة قانونية مهيبة! ضمان قابلية التنفيذ الثنائية وتقليل غموض الاختصاص القضائي بموجب معاهدات التحكيم الدولي يحمي مصالح الموكلين السياديين. ما السوابق القضائية التي تدعم موقفك؟",
-        emotion: 'proud'
-      };
-    }
-
-    if (domain.id === 'engineering') {
-      return {
-        replyText: "Robust structural analysis! Balancing tensile strength tolerances with seismic damping parameters is the hallmark of master architecture. What safety factor did your team calibrate for this design?",
-        arabicTranslation: "تحليل إنشائي متين! موازنة حدود مقاومة الشد مع معاملات التخميد الزلزالي هي علامة المعمارية المتقنة. ما معامل الأمان الذي عايره فريقك لهذا التصميم؟",
-        emotion: 'proud'
-      };
-    }
+    ];
+    const picked = generalOffTopicPicks[Math.floor(Math.random() * generalOffTopicPicks.length)];
+    answerText = picked.text;
+    answerArabic = picked.arabic;
   }
 
-  // ================= 3. INTERMEDIATE & GENERAL CONVERSATION (LEVELS 5 - 8) =================
-  // Weather
-  if (query.includes('weather') || query.includes('rain') || query.includes('sun')) {
-    return {
-      replyText:
-        "Ah, the British weather! It is predictably dreadful, drizzling with melancholy! But a true gentleman carries an umbrella and maintains stiff upper lip composure. How is the weather where you reside?",
-      arabicTranslation:
-        "آه، الطقس البريطاني! إنه كئيب وممطر كالعادة وبشكل متوقع! لكن الجنتلمان الحقيقي يحمل مظلته ويحافظ على وقاره وثباته الإنجليزي. كيف هو الطقس في المكان الذي تسكن فيه؟",
-      emotion: 'idle'
-    };
+  // 3. COMBINE: CORRECTION FIRST + DIRECT ANSWER SECOND!
+  let finalReply = '';
+  let finalArabic = '';
+
+  if (correctionText) {
+    finalReply = `${correctionText}\n\nNow, regarding your thoughts: ${answerText}`;
+    finalArabic = `${correctionArabic}\n\n(وفيما يخص حديثك): ${answerArabic}`;
+  } else {
+    finalReply = answerText;
+    finalArabic = answerArabic;
   }
 
-  // Tea
-  if (query.includes('tea') || query.includes('milk') || query.includes('scone') || query.includes('earl grey')) {
-    return {
-      replyText:
-        "Capital question! Rule of thumb: Warm the porcelain teapot first, steep the loose Earl Grey for precisely four minutes, and NEVER add sugar like a barbarian! A splash of whole milk afterwards, and you have heaven in a cup!",
-      arabicTranslation:
-        "سؤال ممتاز! القاعدة الذهبية: سخّن إبريق الخزف أولاً، وانقع شاي إيرل غراي لأربع دقائق بالضبط، وإياك أن تضيف السكر كأهل الهمجية! ثم رشفة من الحليب الصافي، وستحظى بنعيم في فنجان!",
-      emotion: 'proud'
-    };
-  }
-
-  // Job / Career
-  if (query.includes('job') || query.includes('interview') || query.includes('hire') || query.includes('experience')) {
-    return {
-      replyText:
-        "Fascinating! Confidence without arrogance is the hallmark of distinction. In an interview, maintain steady eye contact, pronounce your consonants like sharp rapiers, and explain how you solve crises with calm intellect!",
-      arabicTranslation:
-        "مثير للاهتمام! الثقة دون تكبر هي علامة التميز. في المقابلة الشخصية، حافظ على التواصل البصري الثابت، وانطق حروفك بحدة ودقة، واشرح كيف تحل الأزمات بعقل هادئ!",
-      emotion: 'idle'
-    };
-  }
-
-  // Greetings
-  if (query.includes('hello') || query.includes('hi') || query.includes('good morning') || query.includes('mangory') || query.includes('charles')) {
-    return {
-      replyText:
-        "Jolly good day to you, my dear chap! I am Mr. Mangory. Your greeting was polite and civilized. What grand topic shall we conquer today in the realm of the King's English?",
-      arabicTranslation:
-        "يوم سعيد جداً لك يا عزيزي! أنا مستر منقوري. كانت تحيتك مهذبة ومتحضرة. ما الموضوع العظيم الذي سنخوض فيه اليوم في رحاب الإنجليزية الملكية؟",
-      emotion: 'proud'
-    };
-  }
-
-  // Travel & London
-  if (query.includes('london') || query.includes('train') || query.includes('ticket') || query.includes('hotel')) {
-    return {
-      replyText:
-        "Ah, London! Mind the gap between the train and the platform! Do take a stroll along Westminster and admire Big Ben, but beware of pigeons in Trafalgar Square!",
-      arabicTranslation:
-        "آه، لندن! انتبه للفجوة بين القطار والرصيف! قم بجولة في وستمنستر وتأمل ساعة بيغ بن، ولكن احترس من الحمام في ميدان ترافالغار!",
-      emotion: 'idle'
-    };
-  }
-
-  // Default Intermediate Witty Responses
-  const fallbacks = [
-    {
-      replyText:
-        "Indeed! An intriguing thought. You expressed that with admirable clarity. Tell me more, what led you to that conclusion?",
-      arabicTranslation:
-        "بالتأكيد! فكرة مثيرة للاهتمام. لقد عبرت عنها بوضوح يثير الإعجاب. أخبرني المزيد، ما الذي قادك إلى هذا الاستنتاج؟",
-      emotion: 'proud' as AvatarEmotion
-    },
-    {
-      replyText:
-        "Fascinating perspective! One could almost believe you spent a semester punting on the river in Cambridge. Pray continue!",
-      arabicTranslation:
-        "منظور رائع وباهر! يكاد المرء يظن أنك قضيت فصلاً دراسياً تجدف في نهر كامبريدج العريق. أرجوك تابع حديثك!",
-      emotion: 'idle' as AvatarEmotion
-    },
-    {
-      replyText:
-        "Well spoken! My monocle remains securely on my face, which means your pronunciation was civilized and pleasing to my ears!",
-      arabicTranslation:
-        "أجدت الحديث تماماً! نظارتي الأرستقراطية ما زالت ثابتة في مكانها، وهذا يعني أن نطقك كان متحضراً ومبهجاً لأذني!",
-      emotion: 'proud' as AvatarEmotion
-    }
-  ];
-
-  const pickedFallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
   return {
-    replyText: pickedFallback.replyText,
-    arabicTranslation: pickedFallback.arabicTranslation,
-    emotion: pickedFallback.emotion
+    replyText: finalReply,
+    arabicTranslation: finalArabic,
+    emotion: initialEmotion,
+    correctionNotice: correctionText,
+    arabicCorrection: correctionArabic
   };
 }
 
 // Fire celebratory confetti
 export function triggerCelebrationConfetti() {
-  confetti({
-    particleCount: 80,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors: ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#ec4899']
-  });
+  try {
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#fbbf24', '#f59e0b', '#10b981', '#3b82f6', '#ec4899']
+    });
+  } catch {}
 }

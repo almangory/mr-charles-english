@@ -79,7 +79,6 @@ export const App: React.FC = () => {
   const [scenario, setScenario] = useState<ScenarioTopic>(CONVERSATION_SCENARIOS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTrap, setActiveTrap] = useState<PronunciationTrap | null>(null);
-  const [pendingUserQuery, setPendingUserQuery] = useState<string>('');
   const [lastCharlesSpeech, setLastCharlesSpeech] = useState<string>('');
 
   // Mobile Parallel Layout State ('avatar' | 'chat')
@@ -112,6 +111,21 @@ export const App: React.FC = () => {
     sounds.enabled = soundEnabled;
   }, [soundEnabled]);
 
+  // Global Audio Unlocker on any user gesture
+  useEffect(() => {
+    const handleFirstUserInteraction = () => {
+      unlockAudio();
+    };
+    window.addEventListener('click', handleFirstUserInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
+    window.addEventListener('keydown', handleFirstUserInteraction, { once: true });
+    return () => {
+      window.removeEventListener('click', handleFirstUserInteraction);
+      window.removeEventListener('touchstart', handleFirstUserInteraction);
+      window.removeEventListener('keydown', handleFirstUserInteraction);
+    };
+  }, [unlockAudio]);
+
   // Persist levels & domains
   useEffect(() => {
     localStorage.setItem('mr_mangory_level_id', currentLevel.id.toString());
@@ -131,6 +145,30 @@ export const App: React.FC = () => {
     localStorage.setItem('mr_charles_streak', streak.toString());
   }, [streak]);
 
+  // Helper to execute Charles speaking aloud and trigger auto-listening turn in Live Mode
+  const speakCharles = useCallback(
+    (textToSpeak: string, targetEmotion: AvatarEmotion = 'speaking') => {
+      unlockAudio();
+      stopListening(); // Mute mic while Charles speaks to avoid hearing himself
+      setLastCharlesSpeech(textToSpeak);
+
+      speak(textToSpeak, {
+        rate: speechRate,
+        onStart: () => setEmotion(targetEmotion),
+        onEnd: () => {
+          setEmotion('idle');
+          if (isLiveMode) {
+            setTimeout(() => {
+              sounds.playClick();
+              startListening();
+            }, 450);
+          }
+        }
+      });
+    },
+    [speak, speechRate, isLiveMode, startListening, stopListening, unlockAudio]
+  );
+
   // Initial Scenario Greeting
   const playGreeting = useCallback(
     (sc: ScenarioTopic, shouldSpeakAloud: boolean = false) => {
@@ -145,33 +183,20 @@ export const App: React.FC = () => {
       setLastCharlesSpeech(greetingMsg.text);
 
       if (shouldSpeakAloud) {
-        setEmotion('speaking');
-        speak(greetingMsg.text, {
-          rate: speechRate,
-          onStart: () => setEmotion('speaking'),
-          onEnd: () => {
-            setEmotion('idle');
-            if (isLiveMode) {
-              setTimeout(() => {
-                sounds.playClick();
-                startListening();
-              }, 400);
-            }
-          }
-        });
+        speakCharles(greetingMsg.text, 'speaking');
       }
     },
-    [speak, speechRate, isLiveMode, startListening, currentLevel, currentDomain]
+    [speakCharles, currentLevel, currentDomain]
   );
 
-  // On first load, display the message
+  // On first load, display the message and speak if unlocked
   const initialGreetingDone = useRef(false);
   useEffect(() => {
     if (!initialGreetingDone.current) {
       initialGreetingDone.current = true;
-      playGreeting(scenario, false);
+      playGreeting(scenario, isUnlocked);
     }
-  }, [scenario, playGreeting]);
+  }, [scenario, playGreeting, isUnlocked]);
 
   // Handle Turn-taking: When user speech recognition finishes, process it
   useEffect(() => {
@@ -191,30 +216,6 @@ export const App: React.FC = () => {
     }
   }, [isListening, isSpeaking, activeTrap]);
 
-  // Helper to execute Charles speaking and trigger auto-listening turn
-  const speakCharles = useCallback(
-    (textToSpeak: string, targetEmotion: AvatarEmotion = 'speaking') => {
-      unlockAudio();
-      stopListening(); // Mute mic while Charles speaks to avoid hearing himself
-      setLastCharlesSpeech(textToSpeak);
-
-      speak(textToSpeak, {
-        rate: speechRate,
-        onStart: () => setEmotion(targetEmotion),
-        onEnd: () => {
-          setEmotion('idle');
-          if (isLiveMode) {
-            setTimeout(() => {
-              sounds.playClick();
-              startListening();
-            }, 500);
-          }
-        }
-      });
-    },
-    [speak, speechRate, isLiveMode, startListening, stopListening, unlockAudio]
-  );
-
   // Manual Trigger to Start Live Voice Conversation
   const handleStartLiveConversation = () => {
     unlockAudio();
@@ -222,7 +223,7 @@ export const App: React.FC = () => {
     speakCharles(currentLevel.initialGreeting || scenario.initialGreeting, 'speaking');
   };
 
-  // Word Translation Click Handler
+  // Word Translation Click Handler (Tap-to-Translate)
   const handleSelectWord = (def: WordDefinition) => {
     setSelectedWordDef(def);
     setShowWordModal(true);
@@ -234,7 +235,7 @@ export const App: React.FC = () => {
     speak(word, { rate });
   };
 
-  // Handle User Input (Speech or Text)
+  // Core User Input Handler (Speech Recognition or Text Input)
   const handleUserSpeech = async (userText: string) => {
     if (!userText.trim()) return;
 
@@ -251,7 +252,7 @@ export const App: React.FC = () => {
     setMessages((prev) => [...prev, userMsg]);
     setEmotion('thinking');
 
-    // 2. CHECK IF CURRENTLY IN CHALLENGE MODE
+    // 2. CHECK IF USER JUST PRACTICED/SOLVED ACTIVE TRAP WORD
     if (activeTrap) {
       const cleanUser = userText.toLowerCase();
       const targetClean = activeTrap.word.toLowerCase();
@@ -262,7 +263,7 @@ export const App: React.FC = () => {
         (cleanUser.length < 25 && targetClean.includes(cleanUser));
 
       if (isCorrect) {
-        // VICTORY! Correct pronunciation achieved!
+        // VICTORY! Correct pronunciation of target trap achieved!
         sounds.playBellDing();
         sounds.playFanfare();
         triggerCelebrationConfetti();
@@ -270,99 +271,43 @@ export const App: React.FC = () => {
         setPoints((p) => p + 50);
         setStreak((s) => s + 1);
 
-        const currentPending = pendingUserQuery;
         const currentTrap = activeTrap;
         setActiveTrap(null);
-        setPendingUserQuery('');
 
-        const followUp = currentPending
-          ? ` Splendid! Now, regarding your question about "${currentPending}": `
-          : ' ';
-        let finalReply = currentTrap.successQuote + followUp;
-        let finalArabic = 'رائع جداً! لقد نطقت الكلمة بشكل مثالي، وها هو مستر منقوري يجيب عن سؤالك الأصلي!';
+        const praiseText = `${currentTrap.successQuote} You pronounced "${currentTrap.word}" with true Oxford distinction! Now, what other noble thought shall we discuss?`;
+        const praiseArabic = `رائع جداً! لقد أتقنت نطق كلمة (${currentTrap.word}) بفصاحة ملكية! ما الفكرة النبيلة الأخرى التي تحب أن نناقشها؟`;
 
-        if (currentPending) {
-          const answer = generateCharlesResponse(
-            currentPending,
-            scenario,
-            currentLevel.id,
-            currentDomain.id
-          );
-          finalReply += answer.replyText;
-          finalArabic += ` (${answer.arabicTranslation})`;
-        }
-
-        const charlesSuccessMsg: Message = {
+        const charlesPraiseMsg: Message = {
           id: 'charles-' + Date.now(),
           sender: 'charles',
-          text: finalReply,
-          arabicTranslation: finalArabic,
+          text: praiseText,
+          arabicTranslation: praiseArabic,
           timestamp: new Date()
         };
-        setMessages((prev) => [...prev, charlesSuccessMsg]);
-
-        // Charles speaks aloud!
-        speakCharles(finalReply, 'proud');
-        return;
-      } else {
-        // FAILED RETRY
-        sounds.playDramaticFail();
-
-        const retrySpeech = `Confound it, not quite! You must pronounce it as: ${activeTrap.word}! Listen carefully: ${activeTrap.phonetic}. Once more, with gusto!`;
-        const charlesRetryMsg: Message = {
-          id: 'charles-' + Date.now(),
-          sender: 'charles',
-          text: retrySpeech,
-          arabicTranslation: `لم تضبطها تماماً بعد! تذكر: النطق هو ${activeTrap.arabicHint}. كررها ثانية!`,
-          timestamp: new Date()
-        };
-        setMessages((prev) => [...prev, charlesRetryMsg]);
-
-        speakCharles(retrySpeech, 'laughing');
+        setMessages((prev) => [...prev, charlesPraiseMsg]);
+        speakCharles(praiseText, 'proud');
         return;
       }
     }
 
-    // 3. NORMAL CONVERSATION MODE: CHECK FOR PRONUNCIATION TRAP
+    // 3. CHECK FOR PRONUNCIATION TRAPS IN SPOKEN USER TEXT
     const detectedTrap = detectPronunciationTrap(userText);
 
     if (detectedTrap) {
-      // TRAP TRIGGERED!
-      sounds.playSteamWhistle();
+      // Theatrical comedic outrage & sound effect!
       sounds.playMonoclePop();
-
+      sounds.playSteamWhistle();
       setActiveTrap(detectedTrap);
-      setPendingUserQuery(userText);
-
-      // On mobile, automatically show the challenge if user is on avatar tab
-      if (mobileTab === 'avatar') {
-        setMobileTab('chat');
-      }
-
-      const scoldingText = `${detectedTrap.angryQuote} You must now pronounce the word "${detectedTrap.word}" correctly before we proceed!`;
-
-      const charlesAngryMsg: Message = {
-        id: 'charles-' + Date.now(),
-        sender: 'charles',
-        text: scoldingText,
-        isCorrectionNotice: true,
-        arabicTranslation: `صدمة درامية لمستر منقوري! لقد وقعت في فخ كلمة: ${detectedTrap.word}. انظر بطاقة التحدي بالأسفل لتصحيحها فوراً!`,
-        timestamp: new Date()
-      };
-      setMessages((prev) => [...prev, charlesAngryMsg]);
-
-      speakCharles(scoldingText, 'angry');
-      return;
+    } else {
+      sounds.playBellDing();
+      setPoints((p) => p + 10);
     }
 
-    // 4. CLEAN PRONUNCIATION: REWARD & ANSWER ALOUD ACCORDING TO LEVEL & DOMAIN
-    sounds.playBellDing();
-    setPoints((p) => p + 15);
-
+    // 4. GENERATE RESPONSE (COMBINING EMOTIONAL CORRECTION + DIRECT ANSWER TO USER'S TOPIC!)
     try {
       let replyText = '';
       let replyArabic = '';
-      let replyEmotion: AvatarEmotion = 'proud';
+      let replyEmotion: AvatarEmotion = detectedTrap ? 'angry' : 'proud';
 
       if (apiKey.trim()) {
         const geminiResult = await askGeminiCharles(
@@ -379,15 +324,16 @@ export const App: React.FC = () => {
         replyArabic = geminiResult.arabicTranslation || '';
         replyEmotion = geminiResult.emotion;
       } else {
-        const fallback = generateCharlesResponse(
+        const generated = generateCharlesResponse(
           userText,
           scenario,
           currentLevel.id,
-          currentDomain.id
+          currentDomain.id,
+          detectedTrap
         );
-        replyText = fallback.replyText;
-        replyArabic = fallback.arabicTranslation;
-        replyEmotion = fallback.emotion;
+        replyText = generated.replyText;
+        replyArabic = generated.arabicTranslation;
+        replyEmotion = generated.emotion;
       }
 
       const charlesReplyMsg: Message = {
@@ -395,6 +341,7 @@ export const App: React.FC = () => {
         sender: 'charles',
         text: replyText,
         arabicTranslation: replyArabic,
+        isCorrectionNotice: !!detectedTrap,
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, charlesReplyMsg]);
@@ -406,13 +353,15 @@ export const App: React.FC = () => {
         userText,
         scenario,
         currentLevel.id,
-        currentDomain.id
+        currentDomain.id,
+        detectedTrap
       );
       const charlesReplyMsg: Message = {
         id: 'charles-' + Date.now(),
         sender: 'charles',
         text: fallback.replyText,
         arabicTranslation: fallback.arabicTranslation,
+        isCorrectionNotice: !!detectedTrap,
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, charlesReplyMsg]);
@@ -423,14 +372,12 @@ export const App: React.FC = () => {
   const handleSelectScenario = (sc: ScenarioTopic) => {
     setScenario(sc);
     setActiveTrap(null);
-    setPendingUserQuery('');
     playGreeting(sc, isUnlocked);
   };
 
   const handleSelectLevel = (lvl: SpeakingLevel) => {
     setCurrentLevel(lvl);
     setActiveTrap(null);
-    setPendingUserQuery('');
     setSpeechRate(lvl.targetPacing);
 
     const levelGreetingMsg: Message = {
@@ -480,7 +427,7 @@ export const App: React.FC = () => {
     });
   };
 
-  // Dynamic suggested prompts: combine level starters and career domain starters!
+  // Dynamic suggested prompts
   const dynamicPrompts = [
     ...currentLevel.starterPrompts.slice(0, 3),
     ...currentDomain.samplePrompts.slice(0, 2)
@@ -652,10 +599,12 @@ export const App: React.FC = () => {
             onClick={() => {
               if (lastCharlesSpeech) {
                 speakCharles(lastCharlesSpeech, emotion);
+              } else {
+                handleTestVoice();
               }
             }}
-            title="اضغط على مستر منقوري لإعادة سماع كلامه بصوته"
-            className="cursor-pointer group"
+            title="اضغط على مستر منقوري لسماع صوته مباشرة"
+            className="cursor-pointer group relative"
           >
             <MrCharlesAvatar
               emotion={emotion}
@@ -665,16 +614,18 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* Quick Repeat Button under Avatar */}
-          {lastCharlesSpeech && (
-            <button
-              onClick={() => speakCharles(lastCharlesSpeech, emotion)}
-              className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-amber-300/90 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm"
-            >
-              <Volume2 className="w-3.5 h-3.5" />
-              <span>أعد سماع كلام مستر منقوري بصوته ({speechRate}x)</span>
-            </button>
-          )}
+          {/* Quick Repeat / Speak Button under Avatar */}
+          <div className="mt-2 flex items-center gap-2">
+            {lastCharlesSpeech && (
+              <button
+                onClick={() => speakCharles(lastCharlesSpeech, emotion)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>أعد سماع كلام مستر منقوري بصوته ({speechRate}x)</span>
+              </button>
+            )}
+          </div>
 
           {/* MOBILE ONLY: Floating live subtitle speech card with clickable words */}
           {latestCharlesMsg && (
@@ -723,27 +674,31 @@ export const App: React.FC = () => {
         {/* VIEW 2: CHAT BOX & CHALLENGE (Always visible on Desktop, Tabbed on Mobile) */}
         {/* ============================================================== */}
         <div
-          className={`w-full max-w-2xl flex-1 flex-col justify-center ${
+          className={`w-full max-w-2xl flex-1 flex-col justify-center space-y-3 ${
             mobileTab === 'chat' ? 'flex' : 'hidden md:flex'
           }`}
         >
-          {activeTrap ? (
-            <PronunciationChallengeCard
-              trap={activeTrap}
-              onListenSample={handleListenSample}
-              onRetry={() => startListening()}
-            />
-          ) : (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-2 sm:p-4 shadow-xl backdrop-blur-sm flex flex-col">
-              <ChatBox
-                messages={messages}
-                isListening={isListening}
-                interimTranscript={transcript}
-                onReplaySpeech={(txt) => speakCharles(txt, 'speaking')}
-                onSelectWord={handleSelectWord}
+          {/* Active Pronunciation Practice Card (Non-blocking banner) */}
+          {activeTrap && (
+            <div className="w-full animate-in fade-in slide-in-from-top-2 duration-300">
+              <PronunciationChallengeCard
+                trap={activeTrap}
+                onListenSample={handleListenSample}
+                onRetry={() => startListening()}
               />
             </div>
           )}
+
+          {/* Full Interactive Chat Box with Tap-to-Translate */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-2 sm:p-4 shadow-xl backdrop-blur-sm flex flex-col">
+            <ChatBox
+              messages={messages}
+              isListening={isListening}
+              interimTranscript={transcript}
+              onReplaySpeech={(txt) => speakCharles(txt, 'speaking')}
+              onSelectWord={handleSelectWord}
+            />
+          </div>
         </div>
 
         {/* ============================================================== */}
@@ -751,11 +706,11 @@ export const App: React.FC = () => {
         {/* ============================================================== */}
         <div className="fixed md:static bottom-0 left-0 right-0 z-30 bg-[#070D1E]/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none border-t md:border-t-0 border-slate-800/80 px-2 sm:px-4 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] w-full">
           {/* Hands-Free Live Notice */}
-          {isLiveMode && !activeTrap && (
+          {isLiveMode && (
             <div className="text-center mb-1 text-[11px] text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               <span>
-                المحادثة المباشرة مفعلة لمستوى {currentLevel.id}: تحدث وسيجيبك مستر منقوري بصوته، ثم يستمع لك تلقائياً!
+                المحادثة المباشرة مفعلة لمستوى {currentLevel.id}: تحدث بحرية وسيجيبك مستر منقوري بصوته ويصححك في أي كلمة!
               </span>
             </div>
           )}
