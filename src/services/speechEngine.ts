@@ -4,14 +4,46 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export interface TTSOptions {
   rate?: number;
   pitch?: number;
+  volume?: number;
   onStart?: () => void;
   onEnd?: () => void;
 }
+
+// Persistent array to prevent Chrome GC bug cutting off utterances
+const activeUtterances: SpeechSynthesisUtterance[] = [];
 
 export function useSpeechSynthesis() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  // Helper to find the best British/English voice
+  const findBestVoice = (availableVoices: SpeechSynthesisVoice[]) => {
+    // 1. Natural British male voices
+    const britishMale = availableVoices.find(
+      (v) =>
+        v.lang.startsWith('en-GB') &&
+        (v.name.toLowerCase().includes('natural') ||
+          v.name.toLowerCase().includes('male') ||
+          v.name.toLowerCase().includes('george') ||
+          v.name.toLowerCase().includes('oliver') ||
+          v.name.toLowerCase().includes('daniel') ||
+          v.name.toLowerCase().includes('ryan') ||
+          v.name.toLowerCase().includes('uk english'))
+    );
+    if (britishMale) return britishMale;
+
+    // 2. Any British voice
+    const anyBritish = availableVoices.find((v) => v.lang.startsWith('en-GB'));
+    if (anyBritish) return anyBritish;
+
+    // 3. Any English voice
+    const anyEnglish = availableVoices.find((v) => v.lang.startsWith('en'));
+    if (anyEnglish) return anyEnglish;
+
+    return availableVoices[0] || null;
+  };
 
   // Load voices
   useEffect(() => {
@@ -19,59 +51,101 @@ export function useSpeechSynthesis() {
 
     const updateVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-
-      // Prioritize British English male voices for Mr. Charles
-      const britishMale = availableVoices.find(
-        (v) =>
-          v.lang.startsWith('en-GB') &&
-          (v.name.toLowerCase().includes('male') ||
-            v.name.toLowerCase().includes('george') ||
-            v.name.toLowerCase().includes('oliver') ||
-            v.name.toLowerCase().includes('daniel') ||
-            v.name.toLowerCase().includes('uk english'))
-      );
-
-      const anyBritish = availableVoices.find((v) => v.lang.startsWith('en-GB'));
-      const anyEnglish = availableVoices.find((v) => v.lang.startsWith('en'));
-
-      setSelectedVoice(britishMale || anyBritish || anyEnglish || availableVoices[0] || null);
+      if (availableVoices.length > 0) {
+        setVoices(availableVoices);
+        setSelectedVoice((current) => current || findBestVoice(availableVoices));
+      }
     };
 
     updateVoices();
     window.speechSynthesis.onvoiceschanged = updateVoices;
+
+    // Chrome keep-alive: prevent speech from pausing on long text
+    const keepAliveTimer = setInterval(() => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 4500);
+
+    return () => clearInterval(keepAliveTimer);
+  }, []);
+
+  // Unlock audio context on first user interaction
+  const unlockAudio = useCallback(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.resume();
+      setIsUnlocked(true);
+    } catch {}
   }, []);
 
   const speak = useCallback(
     (text: string, options?: TTSOptions) => {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        console.warn('Speech synthesis not supported in this browser.');
+        return;
+      }
 
-      window.speechSynthesis.cancel(); // Cancel any existing speech
+      // Resume in case browser paused it
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      window.speechSynthesis.cancel(); // Cancel any existing speech cleanly
 
       const utterance = new SpeechSynthesisUtterance(text);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
+
+      // Dynamically select voice if not yet loaded
+      const currentVoices = window.speechSynthesis.getVoices();
+      const voiceToUse = selectedVoice || findBestVoice(currentVoices);
+
+      if (voiceToUse) {
+        utterance.voice = voiceToUse;
+        utterance.lang = voiceToUse.lang;
+      } else {
+        utterance.lang = 'en-GB';
       }
-      utterance.lang = selectedVoice?.lang || 'en-GB';
-      utterance.rate = options?.rate ?? 0.95; // Slightly measured gentlemanly cadence
-      utterance.pitch = options?.pitch ?? 1.05; // Expressive tone
+
+      utterance.rate = options?.rate ?? 0.95;
+      utterance.pitch = options?.pitch ?? 1.05;
+      utterance.volume = options?.volume ?? 1.0;
+
+      // Retain reference to prevent Chrome GC bug
+      activeUtterances.push(utterance);
 
       utterance.onstart = () => {
         setIsSpeaking(true);
+        setIsUnlocked(true);
         options?.onStart?.();
       };
 
+      const cleanup = () => {
+        setIsSpeaking(false);
+        const idx = activeUtterances.indexOf(utterance);
+        if (idx !== -1) {
+          activeUtterances.splice(idx, 1);
+        }
+      };
+
       utterance.onend = () => {
-        setIsSpeaking(false);
+        cleanup();
         options?.onEnd?.();
       };
 
-      utterance.onerror = () => {
-        setIsSpeaking(false);
+      utterance.onerror = (e) => {
+        console.warn('Speech synthesis utterance error:', e);
+        cleanup();
         options?.onEnd?.();
       };
 
+      // Speak
       window.speechSynthesis.speak(utterance);
+
+      // Force resume immediately for Chrome/Edge
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
     },
     [selectedVoice]
   );
@@ -79,6 +153,7 @@ export function useSpeechSynthesis() {
   const stop = useCallback(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+    activeUtterances.length = 0;
     setIsSpeaking(false);
   }, []);
 
@@ -88,7 +163,9 @@ export function useSpeechSynthesis() {
     isSpeaking,
     voices,
     selectedVoice,
-    setSelectedVoice
+    setSelectedVoice,
+    unlockAudio,
+    isUnlocked
   };
 }
 

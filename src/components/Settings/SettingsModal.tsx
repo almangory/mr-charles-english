@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Key, Volume2, Gauge, Trash2, ShieldCheck, Check } from 'lucide-react';
+import { X, Key, Volume2, Gauge, Trash2, ShieldCheck, Check, Play } from 'lucide-react';
 import { sounds } from '../../services/soundEffects';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   speechRate: number;
   onSelectRate: (rate: number) => void;
   onResetStats: () => void;
+  onTestVoice: () => void;
 }
 
 export const SettingsModal: React.FC<Props> = ({
@@ -25,7 +26,8 @@ export const SettingsModal: React.FC<Props> = ({
   onSelectVoice,
   speechRate,
   onSelectRate,
-  onResetStats
+  onResetStats,
+  onTestVoice
 }) => {
   const [keyInput, setKeyInput] = useState(apiKey);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -51,7 +53,7 @@ export const SettingsModal: React.FC<Props> = ({
                 إعدادات مستر تشارلز الذكية
               </h2>
               <p className="text-xs text-amber-400/80">
-                التحكم في الصوت والذكاء الاصطناعي
+                التحكم في الصوت ومحرك المحادثة المباشرة
               </p>
             </div>
           </div>
@@ -60,54 +62,34 @@ export const SettingsModal: React.FC<Props> = ({
               sounds.playClick();
               onClose();
             }}
-            className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="my-5 space-y-5">
-          {/* Section 1: Optional Gemini API Key */}
+          {/* Section 1: Voice Selection & Test */}
           <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 space-y-3">
-            <div className="flex items-center gap-2 text-amber-400">
-              <Key className="w-4 h-4" />
-              <span className="font-bold text-xs sm:text-sm">
-                مفتاح Google Gemini API (اختياري لمحادثات حرة غير محدودة)
-              </span>
-            </div>
-            <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
-              يعمل التطبيق افتراضياً بنسبة 100% بدون أي مفاتيح عبر محرك الحوار المدمج. إذا أردت فتح حوار حر لا نهائي، ضع مفتاح Gemini المجاني هنا:
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="flex-1 bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
-                dir="ltr"
-              />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Volume2 className="w-4 h-4" />
+                <span className="font-bold text-xs sm:text-sm">
+                  صوت مستر تشارلز (المتصفح)
+                </span>
+              </div>
               <button
-                onClick={handleSaveKey}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-1 active:scale-95"
+                onClick={() => {
+                  sounds.playClick();
+                  onTestVoice();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-md"
               >
-                {savedSuccess ? <Check className="w-4 h-4" /> : 'حفظ'}
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>اختبار الصوت الآن</span>
               </button>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>يتم حفظ المفتاح محلياً على متصفحك فقط ولا يُرسل لأي خادم وسيط.</span>
-            </div>
-          </div>
 
-          {/* Section 2: Voice Selection */}
-          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 space-y-2.5">
-            <div className="flex items-center gap-2 text-amber-400">
-              <Volume2 className="w-4 h-4" />
-              <span className="font-bold text-xs sm:text-sm">
-                صوت مستر تشارلز (المتصفح)
-              </span>
-            </div>
             <select
               value={selectedVoice?.name || ''}
               onChange={(e) => {
@@ -127,9 +109,12 @@ export const SettingsModal: React.FC<Props> = ({
                   </option>
                 ))}
             </select>
+            <p className="text-[11px] text-slate-400">
+              💡 يفضل اختيار أصوات بريطانية (en-GB مثل Oliver, George, Daniel, Google UK English) لتجربة أرستقراطية ممتعة.
+            </p>
           </div>
 
-          {/* Section 3: Speech Rate Slider */}
+          {/* Section 2: Speech Rate Slider */}
           <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 space-y-2.5">
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-2 text-amber-400 font-bold">
@@ -156,6 +141,39 @@ export const SettingsModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Section 3: Optional Gemini API Key */}
+          <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 space-y-3">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Key className="w-4 h-4" />
+              <span className="font-bold text-xs sm:text-sm">
+                مفتاح Google Gemini API (اختياري لمحادثات حرة غير محدودة)
+              </span>
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+              يعمل التطبيق افتراضياً بنسبة 100% بدون أي مفاتيح عبر محرك الحوار المدمج. إذا أردت فتح حوار حر لا نهائي، ضع مفتاح Gemini المجاني هنا:
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="AIzaSy..."
+                className="flex-1 bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                dir="ltr"
+              />
+              <button
+                onClick={handleSaveKey}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+              >
+                {savedSuccess ? <Check className="w-4 h-4" /> : 'حفظ'}
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>يتم حفظ المفتاح محلياً على متصفحك فقط ولا يُرسل لأي خادم وسيط.</span>
+            </div>
+          </div>
+
           {/* Section 4: Reset stats */}
           <div className="pt-2 flex justify-between items-center text-xs">
             <span className="text-slate-400">إعادة تعيين النقاط والـ Streak:</span>
@@ -166,7 +184,7 @@ export const SettingsModal: React.FC<Props> = ({
                   onResetStats();
                 }
               }}
-              className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold p-2 rounded-xl hover:bg-rose-950/40 transition-colors"
+              className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold p-2 rounded-xl hover:bg-rose-950/40 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>تصفير النقاط</span>
