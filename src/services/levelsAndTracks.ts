@@ -237,7 +237,7 @@ export const SPEAKING_LEVELS: SpeakingLevel[] = [
   }
 ];
 
-// ================= THE 7 SPECIALIZED CAREER DOMAINS =================
+// ================= SPECIALIZED CAREER & LIFE DOMAINS =================
 export const CAREER_DOMAINS: CareerDomain[] = [
   {
     id: "general",
@@ -252,6 +252,85 @@ export const CAREER_DOMAINS: CareerDomain[] = [
       "Tell me about the history of British afternoon tea."
     ],
     charlesRole: "An intellectual, encouraging Victorian gentleman and mentor."
+  },
+  {
+    id: "data-quality",
+    nameAr: "جودة البيانات الرقمية وحوكمتها (Digital Data Quality)",
+    nameEn: "Digital Data Quality & Governance",
+    icon: "📊",
+    descriptionAr: "أبعاد جودة البيانات الستة (Accuracy, Completeness, Consistency, Validity, Timeliness, Uniqueness)، تنقية البيانات (Data Cleansing)، الـ ETL، وحوكمة البيانات.",
+    keywords: [
+      "data accuracy",
+      "completeness",
+      "consistency",
+      "timeliness",
+      "validity",
+      "uniqueness",
+      "data cleansing",
+      "deduplication",
+      "data lineage",
+      "data governance",
+      "metadata",
+      "anomaly detection",
+      "schema validation"
+    ],
+    samplePrompts: [
+      "How do we measure data accuracy, completeness, and consistency?",
+      "We built an automated data cleansing and deduplication pipeline.",
+      "Why is data lineage essential for enterprise data governance?"
+    ],
+    charlesRole: "Chief Royal Data Governance Officer who demands 100% data accuracy, zero null values, strict schema validation, and spotless data lineage."
+  },
+  {
+    id: "everyday-places",
+    nameAr: "المتاجر والبقالات والمقاهي (Everyday Places)",
+    nameEn: "Stores, Groceries & Cafés",
+    icon: "🏪",
+    descriptionAr: "مخاطبات الحياة اليومية في السوبرماركت والبقالة، متاجر الملابس والتسوق، طلبات المقاهي والكافيهات، والمطاعم.",
+    keywords: [
+      "aisle",
+      "grocery",
+      "supermarket",
+      "receipt",
+      "discount",
+      "fitting room",
+      "espresso",
+      "latte",
+      "croissant",
+      "takeaway",
+      "cashier",
+      "refund"
+    ],
+    samplePrompts: [
+      "Excuse me, which aisle has fresh organic vegetables and milk?",
+      "May I have a double espresso and a warm croissant for takeaway?",
+      "Do you have these comfortable clothes in a medium size?"
+    ],
+    charlesRole: "A charming, witty British shopkeeper, master barista, and department store manager who guides customers with refined etiquette."
+  },
+  {
+    id: "job-interview-domain",
+    nameAr: "المقابلات الشخصية للتوظيف (Job Interviews)",
+    nameEn: "Job Interviews & Career Prep",
+    icon: "🤝",
+    descriptionAr: "التدريب المكثف على المقابلات الشخصية للتوظيف (HR & Technical)، منهجية STAR، التفاوض على الراتب، والأسئلة السلوكية.",
+    keywords: [
+      "strengths",
+      "weaknesses",
+      "STAR method",
+      "leadership",
+      "deadlines",
+      "problem solving",
+      "track record",
+      "company culture",
+      "measurable impact"
+    ],
+    samplePrompts: [
+      "Let me tell you about my professional journey and key strengths.",
+      "I resolved a critical project bottleneck under tight deadlines.",
+      "Why should you hire me for this position?"
+    ],
+    charlesRole: "Chairman of the Royal Hiring Committee who conducts rigorous yet constructive job interviews and coaches candidates to shine."
   },
   {
     id: "tech",

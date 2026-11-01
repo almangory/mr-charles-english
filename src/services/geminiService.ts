@@ -1,10 +1,11 @@
 import { getLevelById, getDomainById } from './levelsAndTracks';
+import type { AvatarEmotion } from '../components/Avatar/MrCharlesAvatar';
 
 export interface GeminiResponse {
   reply: string;
   arabicTranslation?: string;
   detectedMistakeWord?: string;
-  emotion: 'angry' | 'laughing' | 'proud' | 'idle';
+  emotion: AvatarEmotion;
 }
 
 export async function askGeminiCharles(
@@ -122,7 +123,7 @@ Always structure your reply strictly like this:
     }
 
     // Detect emotion tone from reply
-    let emotion: 'angry' | 'laughing' | 'proud' | 'idle' = 'idle';
+    let emotion: AvatarEmotion = 'happy';
     const lower = reply.toLowerCase();
     if (
       lower.includes('heavens') ||
@@ -130,25 +131,50 @@ Always structure your reply strictly like this:
       lower.includes('agony') ||
       lower.includes('horror') ||
       lower.includes('monocle') ||
-      lower.includes('shock') ||
-      lower.includes('beware')
+      lower.includes('outrage') ||
+      lower.includes('treason')
     ) {
       emotion = 'angry';
     } else if (
+      lower.includes('great scott') ||
+      lower.includes('astonish') ||
+      lower.includes('shock') ||
+      lower.includes('surprise') ||
+      lower.includes('unbelievable')
+    ) {
+      emotion = 'surprised';
+    } else if (
+      lower.includes('alas') ||
+      lower.includes('sorry') ||
+      lower.includes('sad') ||
+      lower.includes('aches') ||
+      lower.includes('weary') ||
+      lower.includes('despair')
+    ) {
+      emotion = 'sad';
+    } else if (
       lower.includes('ha!') ||
+      lower.includes('ha ha') ||
       lower.includes('hilarious') ||
       lower.includes('chuckle') ||
-      lower.includes('amusing') ||
-      lower.includes('hooray')
+      lower.includes('amusing')
     ) {
       emotion = 'laughing';
+    } else if (
+      lower.includes('extraordinary') ||
+      lower.includes('unstoppable') ||
+      lower.includes('thrilling') ||
+      lower.includes('spot-on') ||
+      lower.includes('hooray')
+    ) {
+      emotion = 'excited';
     } else if (
       lower.includes('splendid') ||
       lower.includes('magnificent') ||
       lower.includes('bravo') ||
       lower.includes('oxford') ||
-      lower.includes('champion') ||
-      lower.includes('wonderful')
+      lower.includes('proud') ||
+      lower.includes('impressive')
     ) {
       emotion = 'proud';
     }

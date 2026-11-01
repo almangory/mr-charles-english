@@ -35,10 +35,10 @@ export interface CharlesResponseResult {
   arabicCorrection?: string;
 }
 
-// Master Conversational Engine: Emotional Correction + Direct Answer (Even Off-Topic!)
+// Master Conversational Engine: Emotional Correction + Direct Answer (With Full Scenario & Emotion Intelligence!)
 export function generateCharlesResponse(
   userQuery: string,
-  _scenario?: ScenarioTopic,
+  scenario?: ScenarioTopic,
   levelId: number = 1,
   domainId: string = 'general',
   detectedTrap?: PronunciationTrap | null
@@ -50,106 +50,218 @@ export function generateCharlesResponse(
   // 1. Prepare Emotional Correction Segment if a trap word or mistake was detected
   let correctionText = '';
   let correctionArabic = '';
-  let initialEmotion: AvatarEmotion = 'proud';
+  let chosenEmotion: AvatarEmotion = 'happy';
 
   if (detectedTrap) {
-    initialEmotion = 'angry';
-    correctionText = `${detectedTrap.angryQuote} Take note: ${detectedTrap.word} is pronounced ${detectedTrap.phonetic}!`;
-    correctionArabic = `⚠️ صدمة درامية لمستر منقوري بسبب نطق كلمة (${detectedTrap.word})! انتبه: النطق هو ${detectedTrap.arabicHint}.`;
+    chosenEmotion = 'angry';
+    correctionText = `${detectedTrap.angryQuote} Take note: "${detectedTrap.word}" is pronounced ${detectedTrap.phonetic}!`;
+    correctionArabic = `⚠️ صدمة درامية لمستر منقوري بسبب نطق كلمة (${detectedTrap.word})! انتبه: النطق الصحيح هو ${detectedTrap.arabicHint}.`;
   }
 
-  // 2. Answer the user's actual question or statement (EVEN IF COMPLETELY OFF-TOPIC!)
+  // 2. Answer the user's actual question or statement with rich context & emotion
   let answerText = '';
   let answerArabic = '';
 
-  // === A. Personal Questions about Mr. Mangory ===
-  if (query.includes('who are you') || query.includes('what is your name') || query.includes('your name')) {
+  // === A. DIGITAL DATA QUALITY & GOVERNANCE (قسم جودة البيانات الرقمية) ===
+  if (
+    query.includes('data quality') ||
+    query.includes('accuracy') ||
+    query.includes('completeness') ||
+    query.includes('consistency') ||
+    query.includes('timeliness') ||
+    query.includes('validity') ||
+    query.includes('uniqueness') ||
+    query.includes('cleansing') ||
+    query.includes('deduplication') ||
+    query.includes('lineage') ||
+    query.includes('governance') ||
+    query.includes('metadata') ||
+    query.includes('anomaly') ||
+    query.includes('schema') ||
+    query.includes('etl') ||
+    query.includes('profiling') ||
+    query.includes('null') ||
+    domain.id === 'data-quality' ||
+    scenario?.id === 'digital-data-quality'
+  ) {
+    if (!detectedTrap) chosenEmotion = 'excited';
+
+    if (query.includes('lineage') || query.includes('governance') || query.includes('metadata')) {
+      answerText =
+        "Magnificent data governance insight! End-to-end Data Lineage and a rich Metadata catalog give us complete traceability from raw source tables to executive dashboards. How do you enforce data stewardship across your teams?";
+      answerArabic =
+        "نظرة ثاقبة ومبهرة في حوكمة البيانات! إن تتبع سلسلة نسب البيانات (Data Lineage) وفهرس البيانات الوصفية يمنحاننا شفافية كاملة من الجداول المصدرية حتى لوحات القيادة. كيف تطبقون الإشراف على البيانات في فرقكم؟";
+    } else if (query.includes('cleansing') || query.includes('deduplication') || query.includes('etl') || query.includes('profiling') || query.includes('anomaly') || query.includes('null')) {
+      answerText =
+        "Spot-on engineering! Automated Data Profiling, Data Cleansing, and Deduplication inside the ETL pipeline eliminate null values and outliers before they ever corrupt our analytics warehouse! What validation rules do you run first?";
+      answerArabic =
+        "هندسة دقيقة في الصميم! إن توصيف البيانات الآلي وتنقيتها وإزالة التكرار داخل خط أنابيب ETL يقضي على القيم الفارغة والشاذة قبل أن تفسد مستودع التحليلات! ما قواعد التحقق التي تشغلونها أولاً؟";
+    } else {
+      answerText =
+        "Brilliant command of Digital Data Quality! When the Six Core Dimensions—Accuracy, Completeness, Consistency, Timeliness, Validity, and Uniqueness—stand in harmony, our database becomes a fortress of truth! Which dimension are you auditing next?";
+      answerArabic =
+        "إتقان باهر لمصطلحات جودة البيانات الرقمية! عندما تتناغم أبعاد الجودة الستة: الدقة، الاكتمال، الاتساق، التوقيت المناسب، الصلاحية، والتفرد، تصبح قاعدة بياناتنا حصناً للحقيقة! أي بُعد ستقوم بتدقيقه تالياً؟";
+    }
+  }
+
+  // === B. GROCERY STORE & SUPERMARKET (المخاطبات في البقالات والسوبرماركت) ===
+  else if (
+    query.includes('aisle') ||
+    query.includes('grocery') ||
+    query.includes('supermarket') ||
+    query.includes('kilo') ||
+    query.includes('milk') ||
+    query.includes('bread') ||
+    query.includes('organic') ||
+    query.includes('strawberry') ||
+    query.includes('strawberries') ||
+    query.includes('cashier') ||
+    query.includes('bag') ||
+    scenario?.id === 'grocery-supermarket'
+  ) {
+    if (!detectedTrap) chosenEmotion = 'happy';
+    answerText =
+      "Right this way in our Royal Grocery Store! Fresh organic vegetables, ripe peaches, and farm milk are located in Aisle Three! At the cashier counter, you may pay by contactless card and receive your crisp receipt in a paper bag. Would you like anything from the bakery section?";
+    answerArabic =
+      "تفضل من هنا في بقالتنا الملكية! الخضروات العضوية الطازجة والخوخ الناضج والحليب الطازج موجودة في الممر الثالث (Aisle 3)! وعند الكاشير يمكنك الدفع بالبطاقة واستلام إيصالك في كيس ورقي. هل ترغب في شيء من قسم المخبوزات؟";
+  }
+
+  // === C. RETAIL STORES & BOUTIQUE SHOPPING (المخاطبات في المتاجر والتسوق) ===
+  else if (
+    query.includes('size') ||
+    query.includes('medium') ||
+    query.includes('large') ||
+    query.includes('fitting room') ||
+    query.includes('jacket') ||
+    query.includes('shirt') ||
+    query.includes('discount') ||
+    query.includes('refund') ||
+    query.includes('exchange') ||
+    query.includes('clothes') ||
+    scenario?.id === 'retail-shopping-store'
+  ) {
+    if (!detectedTrap) chosenEmotion = 'excited';
+    answerText =
+      "Splendid choice of attire! We certainly have that in a comfortable medium size, and the fitting room is just to your right. Better yet, there is a twenty percent seasonal discount today, and with your receipt you enjoy a thirty-day exchange or refund guarantee! Shall I wrap it up for you?";
+    answerArabic =
+      "اختيار رائع وأنيق للغاية! يتوفر لدينا بالتأكيد مقاس متوسط (Medium) مريح، وغرفة القياس على يمينك مباشرة. والأجمل أن هناك خصماً موسمياً بنسبة 20% اليوم، ومع الفاتورة تتمتع بضمان استبدال أو استرجاع لمدة 30 يوماً! هل أغلفها لك؟";
+  }
+
+  // === D. CAFÉS, COFFEE SHOPS & BAKERIES (المخاطبات في المقاهي والكافيهات) ===
+  else if (
+    query.includes('espresso') ||
+    query.includes('latte') ||
+    query.includes('croissant') ||
+    query.includes('cappuccino') ||
+    query.includes('oat milk') ||
+    query.includes('takeaway') ||
+    query.includes('wi-fi') ||
+    query.includes('wifi') ||
+    query.includes('cafe') ||
+    query.includes('coffee') ||
+    query.includes('dessert') ||
+    scenario?.id === 'cafe-coffee-shop'
+  ) {
+    if (!detectedTrap) chosenEmotion = 'happy';
+    answerText =
+      "Coming right up at Café Mangory! One silky double espresso, an iced oat-milk latte, and a buttery warm croissant fresh from the oven! Our Wi-Fi password is 'PoshTea1890'. Will that be for dine-in by the sunny window or takeaway?";
+    answerArabic =
+      "حاضر فوراً في مقهى منقوري! دبل إسبريسو غني، ولاتيه مثلج بحليب الشوفان، وكرواسون دافئ بالزبدة خرج للتو من الفرن! كلمة مرور الواي فاي هي 'PoshTea1890'. هل تفضله للجلوس في المقهى بجوار النافذة المشرقة أم سفري (Takeaway)؟";
+  }
+
+  // === E. JOB INTERVIEW SECTION (قسم إجراء المقابلة الشخصية للتوظيف) ===
+  else if (
+    query.includes('interview') ||
+    query.includes('strength') ||
+    query.includes('weakness') ||
+    query.includes('deadline') ||
+    query.includes('hire') ||
+    query.includes('track record') ||
+    query.includes('experience') ||
+    query.includes('collaborated') ||
+    query.includes('resolved') ||
+    query.includes('salary') ||
+    query.includes('company culture') ||
+    scenario?.id === 'job-interview' ||
+    domain.id === 'job-interview-domain'
+  ) {
+    if (!detectedTrap) chosenEmotion = 'proud';
+    answerText =
+      "Impressive articulation for a job interview! You structured your achievement with executive poise and clear measurable impact. Now, for my next interview question: tell me about a time you faced an unexpected crisis or tight deadline—how did you collaborate with your team to resolve it?";
+    answerArabic =
+      "صياغة مبهرة جداً في المقابلة الشخصية! لقد عرضت إنجازك بثقة تنفيذية وأثر قابل للقياس. والآن إلى سؤالي التالي في لجنة التوظيف: حدثني عن موقف واجهت فيه أزمة غير متوقعة أو موعداً نهائياً ضيقاً، كيف تعاونت مع فريقك لحله؟";
+  }
+
+  // === F. Emotional Empathy: Sadness / Fatigue / Frustration ===
+  else if (
+    query.includes('sad') ||
+    query.includes('tired') ||
+    query.includes('exhausted') ||
+    query.includes('depressed') ||
+    query.includes('crying') ||
+    query.includes('difficult') ||
+    query.includes('lonely') ||
+    query.includes('failed')
+  ) {
+    if (!detectedTrap) chosenEmotion = 'sad';
+    answerText =
+      "Oh, my dear friend, my heart truly aches to hear that... Even the grandest souls feel weary under London's grey rain. Take a deep, gentle breath—you are never alone, and I believe in your brilliance with all my heart!";
+    answerArabic =
+      "آه يا صديقي العزيز، يؤلمني قلبي حقاً لسماع ذلك... حتى أعظم النفوس تشعر بالتعب أحياناً تحت مطر لندن الرمادي. خذ نفساً عميقاً وهادئاً؛ لست وحدك أبداً، وأنا أؤمن بذكائك وتألقك من كل قلبي!";
+  }
+
+  // === G. Emotional Surprise / Astonishment ===
+  else if (
+    query.includes('wow') ||
+    query.includes('surprise') ||
+    query.includes('unbelievable') ||
+    query.includes('shock') ||
+    query.includes('secret') ||
+    query.includes('million') ||
+    query.includes('miracle')
+  ) {
+    if (!detectedTrap) chosenEmotion = 'surprised';
+    answerText =
+      "Great Scott! My top hat nearly flew straight through the ceiling! What an astonishing revelation! Pray tell me every single detail at once!";
+    answerArabic =
+      "يا للعجب! كادت قبعتي العالية أن تطير وتخترق السقف من شدة الدهشة! يا له من خبر مذهل! أخبرني بكل التفاصيل حالاً!";
+  }
+
+  // === H. Humor, Jokes & Laughter ===
+  else if (
+    query.includes('joke') ||
+    query.includes('funny') ||
+    query.includes('haha') ||
+    query.includes('laugh') ||
+    query.includes('comedy')
+  ) {
+    if (!detectedTrap) chosenEmotion = 'laughing';
+    answerText =
+      "Ha ha ha! Ho ho! Splendid wit, my dear fellow! Nothing brightens a Victorian afternoon quite like a hearty aristocratic chuckle! Tell me another one!";
+    answerArabic =
+      "ها ها ها! هو هو! دعابة بديعة وخفة ظل رائعة يا صديقي! لا شيء يبهج الظهيرة مثل قهقهة أرستقراطية من القلب! أخبرني بطرفة أخرى!";
+  }
+
+  // === I. Personal Questions about Mr. Mangory ===
+  else if (query.includes('who are you') || query.includes('what is your name') || query.includes('your name')) {
+    if (!detectedTrap) chosenEmotion = 'proud';
     answerText =
       "I am Mr. Mangory (مستر منقوري)! Born in the misty heart of Victorian London, educated at Oxford, and fueled entirely by Earl Grey tea, crumpets, and grammatical perfection! At your gracious service!";
     answerArabic =
       "أنا مستر منقوري! وُلدت في قلب لندن الفيكتورية، وتعلمت في أكسفورد، وطاقتي مستمدة بالكامل من شاي إيرل غراي والفطائر الإنجليزية والدقة النحوية! في خدمتك دائماً!";
-  } else if (query.includes('how old are you') || query.includes('your age')) {
-    answerText =
-      "Good heavens, what an inquisitive inquiry! A true English gentleman never reveals his precise vintage. Let us simply say I have witnessed centuries of linguistic blunders and refined every one of them!";
-    answerArabic =
-      "يا للهول، يا له من استفسار فضولي! الجنتلمان الإنجليزي الحقيقي لا يكشف عن عمره بدقة أبداً. دعنا نقول فقط إنني شهدت قروناً من العثرات اللغوية وقمت بتصحيحها جميعاً!";
-  } else if (query.includes('are you real') || query.includes('are you human') || query.includes('are you ai') || query.includes('robot')) {
-    answerText =
-      "Real? Real in spirit, intellect, and aristocratic wit, my dear fellow! Whether crafted of clockwork gears or modern silicon, my dedication to the King's English is absolute!";
-    answerArabic =
-      "حقيقي؟ حقيقي بالروح والفكر والدعابة الأرستقراطية يا عزيزي! وسواء كنت مصنوعاً من تروس الساعة العتيقة أو رقائق السيليكون الحديثة، فإن إخلاصي للإنجليزية الملكية مطلق!";
   }
 
-  // === B. Sports & Athletics (Off-topic common subject) ===
-  else if (query.includes('football') || query.includes('messi') || query.includes('ronaldo') || query.includes('soccer') || query.includes('barcelona') || query.includes('real madrid') || query.includes('cricket')) {
-    answerText =
-      "Ah, athletics! While cricket at Lord's and rowing along the River Thames are the traditional pastimes of distinction, I cannot deny the drama of a thrilling football match! Tell me, are you a clinical striker or a defensive maestro?";
-    answerArabic =
-      "آه، الرياضة! بينما لعبة الكريكيت والتجديف في نهر التايمز هما الهوايتان التقليديتان للنبلاء، لا يمكنني إنكار الإثارة في مباراة كرة القدم! أخبرني، هل أنت مهاجم قناص أم مايسترو دفاعي؟";
-  }
-
-  // === C. Food, Drinks & Coffee (Off-topic) ===
-  else if (query.includes('coffee') || query.includes('pizza') || query.includes('burger') || query.includes('shawarma') || query.includes('sweet') || query.includes('chocolate') || query.includes('restaurant')) {
-    answerText =
-      "Gastronomy! A splendid subject close to every discerning palate! Though coffee has its charms, nothing in the civilized empire surpasses a fresh porcelain pot of Earl Grey tea paired with warm scones! What is your favorite cuisine?";
-    answerArabic =
-      "فن الطهي والمأكولات! موضوع بديع قريب من كل ذائقة رفيعة! ومع أن القهوة لها سحرها، إلا أنه لا شيء في الإمبراطورية يضاهي إبريق الخزف لشاي إيرل غراي مع الكعك الإنجليزي الدافئ! ما هو طبقك المفضل؟";
-  }
-
-  // === D. Technology, Computers & AI (Off-topic) ===
-  else if (query.includes('computer') || query.includes('programming') || query.includes('python') || query.includes('javascript') || query.includes('code') || query.includes('phone') || query.includes('app')) {
-    answerText =
-      "Marvelous modern technology! Writing elegant, clean code is remarkably like composing high-level English prose: precision, syntax, and discipline are paramount! What fascinating project are you engineering?";
-    answerArabic =
-      "يا لها من تكنولوجيا حديثة مبهرة! كتابة الشفرة البرمجية الأنيقة تشبه إلى حد كبير نظم النثر الإنجليزي الرفيع: فالدقة وبناء الجمل والانضباط أمور لا غنى عنها! ما المشروع الرائع الذي تعمل على هندسته؟";
-  }
-
-  // === E. Movies, Music & Arts ===
-  else if (query.includes('movie') || query.includes('film') || query.includes('song') || query.includes('music') || query.includes('cinema') || query.includes('art') || query.includes('actor')) {
-    answerText =
-      "Ah, the fine arts! Shakespeare's sonnets, timeless theatrical masterpieces, and majestic melodies stir the noble heart! A cultured soul must always nurture their imagination. What artistic creation inspires you most?";
-    answerArabic =
-      "آه، الفنون الرفيعة! سوناتات شكسبير والروائع المسرحية الخالدة والألحان المهيبة تحرك القلوب النبيلة! الروح المتحضرة تغذي خيالها دائماً. ما العمل الفني الذي يلهمك أكثر؟";
-  }
-
-  // === F. Weather & Climate ===
-  else if (query.includes('weather') || query.includes('rain') || query.includes('hot') || query.includes('cold') || query.includes('sun') || query.includes('winter') || query.includes('summer')) {
-    answerText =
-      "The weather! A classic British topic of polite banter! Over here it is drizzling with philosophical gloom, yet we carry our brollies with stiff upper lip composure. How is the temperature and sky in your region?";
-    answerArabic =
-      "الطقس! الموضوع البريطاني الكلاسيكي للحديث الودي! هنا تمطر برذاذ من الكآبة الفلسفية، ومع ذلك نحمل مظلاتنا بكل رباطة جأش ووقار. كيف هي درجات الحرارة والسماء في منطقتك؟";
-  }
-
-  // === G. Sudan & Travel ===
-  else if (query.includes('sudan') || query.includes('khartoum') || query.includes('nile') || query.includes('travel') || query.includes('london') || query.includes('trip') || query.includes('fly')) {
-    answerText =
-      "The grandeur of travel! From the confluence of the two Niles to the historic bells of Westminster, traversing the globe enriches the mind! An articulate traveler with polished English is embraced in every royal palace! Where do you dream of journeying next?";
-    answerArabic =
-      "روعة السفر والترحال! من ملتقى النيلين الخالد إلى أجراس وستمنستر التاريخية، يجوب المرء العالم ليثري مداركه! والمسافر الفصيح بإنجليزيته المصقولة مرحب به في كل مجلس. إلى أين تحلم بالسفر تالياً؟";
-  }
-
-  // === H. Feelings, Life & Philosophy ===
-  else if (query.includes('tired') || query.includes('happy') || query.includes('sad') || query.includes('bored') || query.includes('life') || query.includes('love') || query.includes('hard') || query.includes('easy')) {
-    answerText =
-      "A profound reflection upon the human condition! Life is an epic journey of challenges and triumphs. Keep your chin held high, maintain a brisk stride, and let eloquence illuminate your path! Tell me more about what is in your heart!";
-    answerArabic =
-      "تأمل عميق في أحوال النفس الإنسانية! الحياة رحلة ملحمية من التحديات والانتصارات. ارفع رأسك عالياً، واثبت في خطاك، ودع الفصاحة تنير دربك! أخبرني المزيد عما يجيش في خاطرك!";
-  }
-
-  // === I. Primary Kids Context (Levels 1 - 4) ===
+  // === J. Primary Kids Context (Levels 1 - 4) ===
   else if (level.id <= 4) {
+    if (!detectedTrap) chosenEmotion = 'happy';
     const kidsStarters = [
       {
-        text: "You are doing such a brilliant job speaking English with me! I am clapping with joy! What is your favorite toy or game to play?",
-        arabic: "أنت تقوم بعمل رائع ومبهر جداً في التحدث معي بالإنجليزية! أنا أصفق لك بفرح! ما هي لعبتك المفضلة التي تحب أن تلعبها؟"
+        text: "You are doing such a brilliant job speaking English with me! I am smiling with so much joy! What is your favorite toy or game to play?",
+        arabic: "أنت تقوم بعمل رائع ومبهر جداً في التحدث معي بالإنجليزية! أنا أبتسم بفرح كبير! ما هي لعبتك المفضلة التي تحب أن تلعبها؟"
       },
       {
-        text: "That was wonderful, my little superstar! Your voice brings sunshine into my Victorian study! Tell me, what animal or color do you love the most?",
-        arabic: "كان هذا رائعاً يا بطلي الصغير المتألق! صوتك يدخل البهجة والضياء إلى غرفتي الفيكتورية! أخبرني، ما هو الحيوان أو اللون المفضل لديك؟"
-      },
-      {
-        text: "Hooray! Big golden stars for your cheerful effort! Keep speaking proudly and clearly! Can you tell me what you did today?",
-        arabic: "يا سلام! نجوم ذهبية كبيرة لجهدك المبهج! واصل التحدث بكل ثقة ووضوح! هل تخبرني ماذا فعلت اليوم؟"
+        text: "That was wonderful, my little superstar! Your voice brings sunshine into my heart! Tell me, what animal or fruit do you love the most?",
+        arabic: "كان هذا رائعاً يا بطلي الصغير المتألق! صوتك يدخل البهجة والضياء إلى قلبي! أخبرني، ما هو الحيوان أو الفاكهة المفضلة لديك؟"
       }
     ];
     const picked = kidsStarters[Math.floor(Math.random() * kidsStarters.length)];
@@ -157,40 +269,23 @@ export function generateCharlesResponse(
     answerArabic = picked.arabic;
   }
 
-  // === J. Specialized Domains (Levels 9 - 12) ===
-  else if (level.id >= 9 && domain.id !== 'general') {
-    if (domain.id === 'tech') {
-      answerText = `Spoken with true engineering rigour! When architecting systems around ${domain.keywords.slice(0, 2).join(' and ')}, precision in language mirrors precision in code. How do you approach scalability in this domain?`;
-      answerArabic = `حديث يتسم بالانضباط الهندسي الرفيع! عند تصميم الأنظمة المرتكزة على هذه المفاهيم، فإن دقة الكلمات تعكس دقة الشفرة البرمجية. كيف تضمن قابلية التوسع هنا؟`;
-    } else if (domain.id === 'medicine') {
-      answerText = `Exemplary clinical intellect! Navigating complex cases involving ${domain.keywords.slice(0, 2).join(' and ')} demands acute observational acumen and flawless terminology. What differential diagnosis would you formulate?`;
-      answerArabic = `فراسة سريرية نموذجية! التعامل مع الحالات الطبية المعقدة يتطلب دقة ملاحظة ومصطلحات لا تشوبها شائبة. ما التشخيص التفريقي الذي ستضعه هنا؟`;
-    } else if (domain.id === 'business') {
-      answerText = `A formidable commercial proposition! In top-tier boardrooms, commanding the discourse around ${domain.keywords.slice(0, 2).join(' and ')} guarantees strategic leverage. What are your projected unit economics?`;
-      answerArabic = `طرح تجاري رفيع المستوى! في مجالس الإدارة الرفيعة، إتقان الحديث حول هذه المفاهيم يضمن أعلى نفوذ استراتيجي. ما توقعاتك لاقتصاديات الوحدة؟`;
-    } else {
-      answerText = `A sharp, professional perspective in the field of ${domain.nameEn}! Your eloquence commands attention. Pray expand upon your thesis!`;
-      answerArabic = `منظور مهني دقيق وواثق في مجال ${domain.nameAr}! فصاحتك تفرض الاحترام. تفضل بالتوسع في طرحك!`;
-    }
-  }
-
-  // === K. General Intelligent Fallback for ANY Random or Off-Topic Statement ===
+  // === K. General Intelligent Fallback ===
   else {
-    const generalOffTopicPicks = [
+    const emotionsPool: AvatarEmotion[] = ['happy', 'proud', 'excited', 'laughing'];
+    if (!detectedTrap) {
+      chosenEmotion = emotionsPool[Math.floor(Math.random() * emotionsPool.length)];
+    }
+    const generalPicks = [
       {
-        text: "A truly captivating thought! You expressed that with delightful clarity. As an English gentleman, I appreciate anyone who articulates their mind with conviction. Pray tell me, what inspired that line of thought?",
-        arabic: "فكرة آسرة حقاً! لقد عبرت عنها بوضوح يبعث على البهجة. كجنتلمان إنجليزي، أقدر كل من يعبر عن رأيه بقناعة وثقة. أخبرني بربك، ما الذي ألهمك هذا التفكير؟"
+        text: "A truly captivating thought! You expressed that with delightful clarity and confidence. Pray tell me, what inspired that perspective?",
+        arabic: "فكرة آسرة حقاً! لقد عبرت عنها بوضوح وثقة تبعث على البهجة. أخبرني بربك، ما الذي ألهمك هذه النظرة؟"
       },
       {
-        text: "Most intriguing! Even when our conversation wanders into unexpected avenues, your command of expression remains pleasing to my ears! Continue, my dear chap, I am all ears!",
-        arabic: "مثير للاهتمام للغاية! حتى عندما تنعطف محادثتنا نحو مسارات غير متوقعة، فإن تحكمك في التعبير يطرب أذني! تابع يا صديقي العزيز، كلي آذان صاغية!"
-      },
-      {
-        text: "Capital! A mind that leaps boldly from topic to topic is the mark of lively intellect! Let us explore this further—what is your ultimate perspective on the matter?",
-        arabic: "ممتاز جداً! العقل الذي يقفز بجرأة وذكاء بين الموضوعات هو علامة الفطنة الحية! دعنا نستكشف هذا أكثر، ما رأيك النهائي في هذا الأمر؟"
+        text: "Magnificent expression! Your command of the English language is growing sharper with every sentence! Let us explore this further—what is your next move?",
+        arabic: "تعبير مهيب ورائع! إتقانك للغة الإنجليزية يزداد تألقاً مع كل جملة! دعنا نستكشف هذا أكثر، ما هي خطوتك القادمة؟"
       }
     ];
-    const picked = generalOffTopicPicks[Math.floor(Math.random() * generalOffTopicPicks.length)];
+    const picked = generalPicks[Math.floor(Math.random() * generalPicks.length)];
     answerText = picked.text;
     answerArabic = picked.arabic;
   }
@@ -210,7 +305,7 @@ export function generateCharlesResponse(
   return {
     replyText: finalReply,
     arabicTranslation: finalArabic,
-    emotion: initialEmotion,
+    emotion: chosenEmotion,
     correctionNotice: correctionText,
     arabicCorrection: correctionArabic
   };

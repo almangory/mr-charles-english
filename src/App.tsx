@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MrCharlesAvatar } from './components/Avatar/MrCharlesAvatar';
-import type { AvatarEmotion } from './components/Avatar/MrCharlesAvatar';
+import { MrCharlesAvatar, AVATAR_EMOTIONS_LIST } from './components/Avatar/MrCharlesAvatar';
+import type { AvatarEmotion, EmotionMeta } from './components/Avatar/MrCharlesAvatar';
 import { Navbar } from './components/Header/Navbar';
 import { ChatBox } from './components/Dialogue/ChatBox';
 import { WordTranslationModal } from './components/Dialogue/WordTranslationModal';
@@ -9,7 +9,22 @@ import { PronunciationChallengeCard } from './components/Challenge/Pronunciation
 import { ScenarioSelectorModal } from './components/Scenarios/ScenarioSelectorModal';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { LevelAndTrackModal } from './components/Levels/LevelAndTrackModal';
-import { Volume2, Radio, Play, MessageSquare, UserCheck, Languages } from 'lucide-react';
+import { DataQualityModal } from './components/DataQuality/DataQualityModal';
+import { JobInterviewModal } from './components/Interview/JobInterviewModal';
+import {
+  Volume2,
+  Radio,
+  Play,
+  MessageSquare,
+  UserCheck,
+  Languages,
+  Database,
+  Store,
+  Briefcase,
+  Sparkles,
+  ChevronLeft,
+  X
+} from 'lucide-react';
 
 import { useSpeechSynthesis, useSpeechRecognition } from './services/speechEngine';
 import { sounds } from './services/soundEffects';
@@ -19,7 +34,8 @@ import {
 } from './services/pronunciationDictionary';
 import type {
   PronunciationTrap,
-  ScenarioTopic
+  ScenarioTopic,
+  ScenarioCategory
 } from './services/pronunciationDictionary';
 import {
   calculateRank,
@@ -38,6 +54,8 @@ import type {
 } from './services/levelsAndTracks';
 import { lookupWord } from './services/dictionaryService';
 import type { WordDefinition } from './services/dictionaryService';
+import type { DataQualityTerm } from './services/dataQualityService';
+import type { InterviewTrack } from './services/jobInterviewService';
 
 export const App: React.FC = () => {
   // Speech Hooks
@@ -75,11 +93,22 @@ export const App: React.FC = () => {
   const [showLevelModal, setShowLevelModal] = useState(false);
 
   // App General State
-  const [emotion, setEmotion] = useState<AvatarEmotion>('idle');
+  const [emotion, setEmotion] = useState<AvatarEmotion>('happy');
+  const lastExpressiveEmotionRef = useRef<AvatarEmotion>('happy');
+
   const [scenario, setScenario] = useState<ScenarioTopic>(CONVERSATION_SCENARIOS[0]);
+  const [scenarioModalCategory, setScenarioModalCategory] = useState<ScenarioCategory>('all');
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeTrap, setActiveTrap] = useState<PronunciationTrap | null>(null);
   const [lastCharlesSpeech, setLastCharlesSpeech] = useState<string>('');
+
+  // New Specialized Section Modals State
+  const [showDataQualityModal, setShowDataQualityModal] = useState(false);
+  const [showJobInterviewModal, setShowJobInterviewModal] = useState(false);
+
+  // Active Live Job Interview Session State
+  const [activeInterviewTrack, setActiveInterviewTrack] = useState<InterviewTrack | null>(null);
+  const [interviewQuestionIdx, setInterviewQuestionIdx] = useState<number>(0);
 
   // Mobile Parallel Layout State ('avatar' | 'chat')
   const [mobileTab, setMobileTab] = useState<'avatar' | 'chat'>('avatar');
@@ -145,23 +174,55 @@ export const App: React.FC = () => {
     localStorage.setItem('mr_charles_streak', streak.toString());
   }, [streak]);
 
-  // Helper to execute Charles speaking aloud and trigger auto-listening turn in Live Mode
+  // Helper to play matching sound effect for an emotion
+  const triggerEmotionSound = useCallback((em: AvatarEmotion) => {
+    switch (em) {
+      case 'happy':
+        sounds.playHappyChime();
+        break;
+      case 'angry':
+        sounds.playMonoclePop();
+        sounds.playSteamWhistle();
+        break;
+      case 'excited':
+      case 'proud':
+        sounds.playFanfare();
+        break;
+      case 'surprised':
+        sounds.playSurpriseGasp();
+        break;
+      case 'sad':
+        sounds.playSadSigh();
+        break;
+      case 'laughing':
+        sounds.playChuckle();
+        break;
+      default:
+        sounds.playClick();
+        break;
+    }
+  }, []);
+
+  // Helper to execute Charles speaking aloud while preserving his facial emotion!
   const speakCharles = useCallback(
-    (textToSpeak: string, targetEmotion: AvatarEmotion = 'speaking') => {
+    (textToSpeak: string, targetEmotion: AvatarEmotion = 'happy') => {
       unlockAudio();
       stopListening(); // Mute mic while Charles speaks to avoid hearing himself
       setLastCharlesSpeech(textToSpeak);
+      lastExpressiveEmotionRef.current = targetEmotion;
+      setEmotion(targetEmotion);
 
       speak(textToSpeak, {
         rate: speechRate,
         onStart: () => setEmotion(targetEmotion),
         onEnd: () => {
-          setEmotion('idle');
+          // Keep the expressive emotion visible on the Avatar face!
+          setEmotion(targetEmotion);
           if (isLiveMode) {
             setTimeout(() => {
               sounds.playClick();
               startListening();
-            }, 450);
+            }, 550);
           }
         }
       });
@@ -169,21 +230,55 @@ export const App: React.FC = () => {
     [speak, speechRate, isLiveMode, startListening, stopListening, unlockAudio]
   );
 
+  // Interactive Emotion Trigger when user clicks an emotion button on the Avatar Emotion Bar
+  const handleTriggerAvatarEmotion = (meta: EmotionMeta) => {
+    unlockAudio();
+    lastExpressiveEmotionRef.current = meta.id;
+    setEmotion(meta.id);
+    triggerEmotionSound(meta.id);
+
+    const emotionMsg: Message = {
+      id: 'emotion-' + Date.now(),
+      sender: 'charles',
+      text: meta.sampleLineEn,
+      arabicTranslation: `(${meta.labelAr}): ${meta.sampleLineAr}`,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, emotionMsg]);
+
+    // Speak with slight pitch/rate modulation matching the emotion
+    const emotionRate =
+      meta.id === 'excited'
+        ? Math.min(1.1, speechRate + 0.08)
+        : meta.id === 'sad'
+        ? Math.max(0.75, speechRate - 0.1)
+        : speechRate;
+
+    stopListening();
+    setLastCharlesSpeech(meta.sampleLineEn);
+    speak(meta.sampleLineEn, {
+      rate: emotionRate,
+      onStart: () => setEmotion(meta.id),
+      onEnd: () => setEmotion(meta.id)
+    });
+  };
+
   // Initial Scenario Greeting
   const playGreeting = useCallback(
     (sc: ScenarioTopic, shouldSpeakAloud: boolean = false) => {
+      const greetingText = sc.initialGreeting || currentLevel.initialGreeting;
       const greetingMsg: Message = {
         id: 'initial-' + Date.now(),
         sender: 'charles',
-        text: currentLevel.initialGreeting || sc.initialGreeting,
-        arabicTranslation: `مستر منقوري جاهز لمستوى (${currentLevel.id}: ${currentLevel.titleAr}) في مجال (${currentDomain.nameAr}).`,
+        text: greetingText,
+        arabicTranslation: `سيناريو (${sc.title}) جاهز! المستوى الحالي: (${currentLevel.id}: ${currentLevel.titleAr}) • التخصص: (${currentDomain.nameAr}).`,
         timestamp: new Date()
       };
       setMessages([greetingMsg]);
       setLastCharlesSpeech(greetingMsg.text);
 
       if (shouldSpeakAloud) {
-        speakCharles(greetingMsg.text, 'speaking');
+        speakCharles(greetingMsg.text, 'happy');
       }
     },
     [speakCharles, currentLevel, currentDomain]
@@ -207,20 +302,11 @@ export const App: React.FC = () => {
     }
   }, [isListening, transcript]);
 
-  // Sync avatar posture with listening state
-  useEffect(() => {
-    if (isListening) {
-      setEmotion('listening');
-    } else if (!isSpeaking && !activeTrap) {
-      setEmotion('idle');
-    }
-  }, [isListening, isSpeaking, activeTrap]);
-
   // Manual Trigger to Start Live Voice Conversation
   const handleStartLiveConversation = () => {
     unlockAudio();
     sounds.playClick();
-    speakCharles(currentLevel.initialGreeting || scenario.initialGreeting, 'speaking');
+    speakCharles(scenario.initialGreeting || currentLevel.initialGreeting, 'happy');
   };
 
   // Word Translation Click Handler (Tap-to-Translate)
@@ -229,10 +315,82 @@ export const App: React.FC = () => {
     setShowWordModal(true);
   };
 
-  // Single word audio pronunciation (slow / normal)
-  const handleSpeakSingleWord = (word: string, rate: number = 0.72) => {
+  // Single word or sample phrase audio pronunciation
+  const handleSpeakSingleWord = (word: string, rate: number = 0.75) => {
     unlockAudio();
     speak(word, { rate });
+  };
+
+  // Practice a Digital Data Quality Term directly with Mr. Mangory
+  const handlePracticeDataQualityTerm = (term: DataQualityTerm) => {
+    const dqScenario = CONVERSATION_SCENARIOS.find((s) => s.id === 'digital-data-quality');
+    if (dqScenario) {
+      setScenario(dqScenario);
+    }
+    const dqDomain = getDomainById('data-quality');
+    setCurrentDomain(dqDomain);
+
+    const promptText = `Let us practice the Digital Data Quality term "${term.termEn}" (${term.phonetic})! ${term.definitionEn} For example: "${term.exampleEn}" Now, repeat "${term.termEn}" or use it in a sentence!`;
+    const promptAr = `دعنا نتدرب على مصطلح جودة البيانات الرقمية (${term.termEn} - ${term.termAr})! النطق: ${term.pronunciationHintAr}. المعنى: ${term.definitionAr}. انطق المصطلح بصوتك الآن!`;
+
+    const msg: Message = {
+      id: 'dq-term-' + Date.now(),
+      sender: 'charles',
+      text: promptText,
+      arabicTranslation: promptAr,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, msg]);
+    sounds.playHappyChime();
+    speakCharles(promptText, 'excited');
+  };
+
+  // Start an Interactive Live Job Interview Track
+  const handleStartLiveInterviewTrack = (track: InterviewTrack, questionIdx: number = 0) => {
+    setActiveInterviewTrack(track);
+    setInterviewQuestionIdx(questionIdx);
+
+    const interviewSc = CONVERSATION_SCENARIOS.find((s) => s.id === 'job-interview');
+    if (interviewSc) {
+      setScenario(interviewSc);
+    }
+
+    const q = track.questions[questionIdx] || track.questions[0];
+    const introText = `Welcome to the ${track.titleEn}! Question ${q.stepNumber}: ${q.questionEn}`;
+    const introAr = `مرحباً بك في (${track.titleAr})! السؤال ${q.stepNumber}: ${q.questionAr} (استخدم الكلمات المفتاحية: ${q.powerKeywords.join(', ')})`;
+
+    const msg: Message = {
+      id: 'interview-q-' + Date.now(),
+      sender: 'charles',
+      text: introText,
+      arabicTranslation: introAr,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, msg]);
+    sounds.playFanfare();
+    speakCharles(introText, 'proud');
+  };
+
+  // Advance to Next Question in Active Job Interview
+  const handleNextInterviewQuestion = () => {
+    if (!activeInterviewTrack) return;
+    const nextIdx = (interviewQuestionIdx + 1) % activeInterviewTrack.questions.length;
+    setInterviewQuestionIdx(nextIdx);
+    const q = activeInterviewTrack.questions[nextIdx];
+
+    const qText = `Splendid! Let us move to Interview Question ${q.stepNumber}: ${q.questionEn}`;
+    const qAr = `ممتاز! لننتقل إلى السؤال ${q.stepNumber} في المقابلة الشخصية: ${q.questionAr}`;
+
+    const msg: Message = {
+      id: 'interview-next-' + Date.now(),
+      sender: 'charles',
+      text: qText,
+      arabicTranslation: qAr,
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, msg]);
+    sounds.playBellDing();
+    speakCharles(qText, 'excited');
   };
 
   // Core User Input Handler (Speech Recognition or Text Input)
@@ -263,7 +421,6 @@ export const App: React.FC = () => {
         (cleanUser.length < 25 && targetClean.includes(cleanUser));
 
       if (isCorrect) {
-        // VICTORY! Correct pronunciation of target trap achieved!
         sounds.playBellDing();
         sounds.playFanfare();
         triggerCelebrationConfetti();
@@ -294,7 +451,6 @@ export const App: React.FC = () => {
     const detectedTrap = detectPronunciationTrap(userText);
 
     if (detectedTrap) {
-      // Theatrical comedic outrage & sound effect!
       sounds.playMonoclePop();
       sounds.playSteamWhistle();
       setActiveTrap(detectedTrap);
@@ -307,7 +463,7 @@ export const App: React.FC = () => {
     try {
       let replyText = '';
       let replyArabic = '';
-      let replyEmotion: AvatarEmotion = detectedTrap ? 'angry' : 'proud';
+      let replyEmotion: AvatarEmotion = detectedTrap ? 'angry' : 'happy';
 
       if (apiKey.trim()) {
         const geminiResult = await askGeminiCharles(
@@ -322,7 +478,7 @@ export const App: React.FC = () => {
         );
         replyText = geminiResult.reply;
         replyArabic = geminiResult.arabicTranslation || '';
-        replyEmotion = geminiResult.emotion;
+        replyEmotion = detectedTrap ? 'angry' : geminiResult.emotion;
       } else {
         const generated = generateCharlesResponse(
           userText,
@@ -346,7 +502,7 @@ export const App: React.FC = () => {
       };
       setMessages((prev) => [...prev, charlesReplyMsg]);
 
-      // Speak reply aloud!
+      triggerEmotionSound(replyEmotion);
       speakCharles(replyText, replyEmotion);
     } catch {
       const fallback = generateCharlesResponse(
@@ -372,6 +528,9 @@ export const App: React.FC = () => {
   const handleSelectScenario = (sc: ScenarioTopic) => {
     setScenario(sc);
     setActiveTrap(null);
+    if (sc.id !== 'job-interview') {
+      setActiveInterviewTrack(null);
+    }
     playGreeting(sc, isUnlocked);
   };
 
@@ -404,7 +563,7 @@ export const App: React.FC = () => {
     };
     setMessages((prev) => [...prev, domainMsg]);
     if (isUnlocked) {
-      speakCharles(domainMsg.text, 'proud');
+      speakCharles(domainMsg.text, 'excited');
     }
   };
 
@@ -422,19 +581,30 @@ export const App: React.FC = () => {
     unlockAudio();
     speak("Jolly good! My voice is crystal clear and at your noble service! Let us speak the King's English!", {
       rate: speechRate,
-      onStart: () => setEmotion('speaking'),
+      onStart: () => setEmotion('happy'),
       onEnd: () => setEmotion('proud')
     });
   };
 
-  // Dynamic suggested prompts
-  const dynamicPrompts = [
-    ...currentLevel.starterPrompts.slice(0, 3),
-    ...currentDomain.samplePrompts.slice(0, 2)
-  ];
+  // Dynamic suggested prompts based on active scenario, interview, level & domain
+  const activeInterviewQuestion =
+    activeInterviewTrack && activeInterviewTrack.questions[interviewQuestionIdx];
+
+  const dynamicPrompts = activeInterviewQuestion
+    ? [
+        activeInterviewQuestion.sampleAnswerEn,
+        ...scenario.suggestedPrompts.slice(0, 2)
+      ]
+    : [
+        ...scenario.suggestedPrompts.slice(0, 3),
+        ...currentDomain.samplePrompts.slice(0, 2)
+      ];
 
   // Latest message from Charles for quick preview in Mobile Avatar mode
   const latestCharlesMsg = [...messages].reverse().find((m) => m.sender === 'charles');
+
+  // Helper for current emotion badge text
+  const currentEmotionMeta = AVATAR_EMOTIONS_LIST.find((e) => e.id === emotion);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#070D1E] text-slate-100 font-sans selection:bg-amber-500 selection:text-black overflow-x-hidden">
@@ -446,7 +616,10 @@ export const App: React.FC = () => {
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
         onOpenSettings={() => setShowSettingsModal(true)}
-        onOpenScenarios={() => setShowScenarioModal(true)}
+        onOpenScenarios={() => {
+          setScenarioModalCategory('all');
+          setShowScenarioModal(true);
+        }}
         currentScenarioTitle={scenario.title}
         isLiveMode={isLiveMode}
         onToggleLiveMode={() => {
@@ -461,6 +634,80 @@ export const App: React.FC = () => {
         currentDomainName={currentDomain.nameAr}
         onOpenLevels={() => setShowLevelModal(true)}
       />
+
+      {/* ============================================================== */}
+      {/* QUICK HUB BAR: DATA QUALITY • STORES/GROCERIES/CAFÉS • JOB INTERVIEW */}
+      {/* ============================================================== */}
+      <div className="w-full bg-[#0A1228]/95 border-b border-slate-800/90 px-2 sm:px-5 py-2">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* 1. Digital Data Quality Section Button */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                setShowDataQualityModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>📊 قسم جودة البيانات الرقمية</span>
+            </button>
+
+            {/* 2. Everyday Places: Stores, Groceries & Cafés Button */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                setScenarioModalCategory('places');
+                setShowScenarioModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+            >
+              <Store className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>🏪 المتاجر والبقالات والمقاهي</span>
+            </button>
+
+            {/* Quick Place Switchers (Grocery / Store / Café) */}
+            <div className="hidden lg:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+              {[
+                { id: 'grocery-supermarket', label: '🛒 البقالة' },
+                { id: 'retail-shopping-store', label: '🛍️ المتجر' },
+                { id: 'cafe-coffee-shop', label: '☕ المقهى' }
+              ].map((pl) => {
+                const isSelected = scenario.id === pl.id;
+                return (
+                  <button
+                    key={pl.id}
+                    onClick={() => {
+                      sounds.playClick();
+                      const found = CONVERSATION_SCENARIOS.find((s) => s.id === pl.id);
+                      if (found) handleSelectScenario(found);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 shadow'
+                        : 'text-slate-300 hover:text-amber-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    {pl.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 3. Job Interview Section Button */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                setShowJobInterviewModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span>💼 قسم المقابلة الشخصية للتوظيف</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 2. Mobile View Switcher (Parallel Layout for Mobile Phones < md) */}
       <div className="md:hidden sticky top-14 z-20 bg-[#070D1E]/95 backdrop-blur-md px-3 pt-2 pb-1 border-b border-slate-800">
@@ -477,7 +724,7 @@ export const App: React.FC = () => {
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            <span>الأفاتار المباشر</span>
+            <span>الأفاتار والمشاعر</span>
           </button>
 
           <button
@@ -522,7 +769,7 @@ export const App: React.FC = () => {
                   المحادثة المباشرة مع مستر منقوري جاهزة!
                 </h3>
                 <p className="text-[11px] sm:text-xs text-slate-900 font-medium">
-                  المستوى الحالي: {currentLevel.titleAr} • {currentDomain.nameAr}
+                  {scenario.title} • {currentLevel.titleAr}
                 </p>
               </div>
             </div>
@@ -537,7 +784,68 @@ export const App: React.FC = () => {
         )}
 
         {/* ============================================================== */}
-        {/* VIEW 1: AVATAR STAGE (Always visible on Desktop, Tabbed on Mobile) */}
+        {/* ACTIVE LIVE JOB INTERVIEW SIMULATOR BANNER (When in Interview Mode) */}
+        {/* ============================================================== */}
+        {activeInterviewTrack && activeInterviewQuestion && (
+          <div className="w-full max-w-2xl bg-gradient-to-r from-indigo-950/95 via-slate-900 to-indigo-950/95 border-2 border-indigo-500/50 rounded-2xl p-3.5 sm:p-4 shadow-xl space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{activeInterviewTrack.icon}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-indigo-300">
+                      لجنة المقابلة الشخصية: {activeInterviewTrack.titleAr}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold">
+                      سؤال {activeInterviewQuestion.stepNumber} من {activeInterviewTrack.questions.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleNextInterviewQuestion}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all cursor-pointer"
+                >
+                  <span>السؤال التالي</span>
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setActiveInterviewTrack(null)}
+                  title="إنهاء وضع المقابلة"
+                  className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+              <div className="text-xs sm:text-sm font-english font-bold text-amber-300">
+                "{activeInterviewQuestion.questionEn}"
+              </div>
+              <div className="text-[11px] text-slate-300 mt-1">
+                {activeInterviewQuestion.questionAr}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                <span className="text-[10px] text-indigo-300 font-semibold">
+                  💡 كلمات مفتاحية يُنصح بذكرها في إجابتك:
+                </span>
+                {activeInterviewQuestion.powerKeywords.map((kw, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] font-english px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-500/30"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* VIEW 1: AVATAR STAGE & EMOTION CONTROL BAR */}
         {/* ============================================================== */}
         <div
           className={`flex-col items-center justify-center relative w-full pt-1 pb-1 ${
@@ -557,29 +865,19 @@ export const App: React.FC = () => {
             </button>
 
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-md ${
-                emotion === 'angry'
-                  ? 'bg-rose-600/90 text-white animate-bounce'
-                  : emotion === 'laughing'
-                  ? 'bg-amber-500 text-slate-950'
-                  : emotion === 'proud'
-                  ? 'bg-emerald-500 text-slate-950'
-                  : emotion === 'listening'
-                  ? 'bg-indigo-500 text-white animate-pulse'
-                  : emotion === 'thinking'
-                  ? 'bg-sky-500 text-white'
-                  : emotion === 'speaking'
-                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 animate-pulse'
-                  : 'bg-slate-800 text-amber-400 border border-amber-500/30'
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-md bg-gradient-to-r ${
+                currentEmotionMeta
+                  ? currentEmotionMeta.colorClass
+                  : isListening
+                  ? 'from-indigo-500 to-blue-600 text-white animate-pulse'
+                  : 'from-slate-800 to-slate-900 text-amber-400 border border-amber-500/30'
               }`}
             >
-              {emotion === 'angry' && '🤬 غضب درامي كرتوني (نطق خاطئ!)'}
-              {emotion === 'laughing' && '😂 قهقهة أرستقراطية مرحة!'}
-              {emotion === 'proud' && '🎩 فخور جداً بنطقك السليم!'}
-              {emotion === 'listening' && '👂 مستر منقوري يستمع لك الآن (تحدث بالإنجليزية)...'}
-              {emotion === 'thinking' && '🧐 يفكر في الإجابة...'}
-              {emotion === 'speaking' && '🗣️ مستر منقوري ينطق بصوته الآن!'}
-              {emotion === 'idle' && '☕ مستر منقوري في انتظارك'}
+              {isListening
+                ? '👂 مستر منقوري يستمع لك الآن (تحدث بالإنجليزية)...'
+                : currentEmotionMeta
+                ? currentEmotionMeta.badgeTextAr
+                : '☕ مستر منقوري في انتظارك'}
             </span>
 
             {/* Live Audio Waves when Speaking */}
@@ -589,7 +887,7 @@ export const App: React.FC = () => {
                 <span className="inline-block w-1.5 h-4 bg-amber-400 animate-bounce [animation-delay:0.15s]"></span>
                 <span className="inline-block w-1.5 h-2 bg-amber-400 animate-bounce [animation-delay:0.3s]"></span>
                 <span className="inline-block w-1.5 h-4 bg-amber-400 animate-bounce [animation-delay:0.1s]"></span>
-                <span>صوت حي</span>
+                <span>ينطق الآن</span>
               </span>
             )}
           </div>
@@ -614,17 +912,45 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* Quick Repeat / Speak Button under Avatar */}
-          <div className="mt-2 flex items-center gap-2">
-            {lastCharlesSpeech && (
-              <button
-                onClick={() => speakCharles(lastCharlesSpeech, emotion)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm"
-              >
-                <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                <span>أعد سماع كلام مستر منقوري بصوته ({speechRate}x)</span>
-              </button>
-            )}
+          {/* ============================================================== */}
+          {/* INTERACTIVE AVATAR EMOTIONS PANEL (فرح • غضب • حماس • اندهاش • حزن • فخر • ضحك • تفكير) */}
+          {/* ============================================================== */}
+          <div className="mt-2 w-full max-w-2xl bg-slate-900/80 border border-slate-800/90 rounded-2xl p-2.5 shadow-lg">
+            <div className="flex items-center justify-between px-1 mb-1.5">
+              <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>تفعيل مشاعر وانفعالات مستر منقوري الحية (اضغط لتجربة أي شعور بالصوت والحركة):</span>
+              </span>
+              {lastCharlesSpeech && (
+                <button
+                  onClick={() => speakCharles(lastCharlesSpeech, emotion)}
+                  className="hidden sm:flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-semibold border border-amber-500/30 cursor-pointer"
+                >
+                  <Volume2 className="w-3 h-3 text-amber-400" />
+                  <span>إعادة سماع كلامه ({speechRate}x)</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+              {AVATAR_EMOTIONS_LIST.map((em) => {
+                const isSelected = emotion === em.id;
+                return (
+                  <button
+                    key={em.id}
+                    onClick={() => handleTriggerAvatarEmotion(em)}
+                    className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all active:scale-95 cursor-pointer border ${
+                      isSelected
+                        ? `bg-gradient-to-br ${em.colorClass} shadow-md scale-[1.03]`
+                        : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 border-slate-700/70'
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg leading-none mb-0.5">{em.emoji}</span>
+                    <span className="truncate max-w-full text-[10px]">{em.labelAr.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* MOBILE ONLY: Floating live subtitle speech card with clickable words */}
@@ -695,7 +1021,7 @@ export const App: React.FC = () => {
               messages={messages}
               isListening={isListening}
               interimTranscript={transcript}
-              onReplaySpeech={(txt) => speakCharles(txt, 'speaking')}
+              onReplaySpeech={(txt) => speakCharles(txt, emotion)}
               onSelectWord={handleSelectWord}
             />
           </div>
@@ -710,7 +1036,7 @@ export const App: React.FC = () => {
             <div className="text-center mb-1 text-[11px] text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               <span>
-                المحادثة المباشرة مفعلة لمستوى {currentLevel.id}: تحدث بحرية وسيجيبك مستر منقوري بصوته ويصححك في أي كلمة!
+                المحادثة المباشرة مفعلة ({scenario.title}): تحدث بحرية وسيجيبك مستر منقوري بصوته ومشاعره الحية!
               </span>
             </div>
           )}
@@ -734,6 +1060,28 @@ export const App: React.FC = () => {
         onSpeakWord={handleSpeakSingleWord}
       />
 
+      {/* Digital Data Quality Section Modal */}
+      <DataQualityModal
+        isOpen={showDataQualityModal}
+        onClose={() => setShowDataQualityModal(false)}
+        onSpeakText={handleSpeakSingleWord}
+        onPracticeTermWithCharles={handlePracticeDataQualityTerm}
+        onStartDataQualityScenario={() => {
+          const dqSc = CONVERSATION_SCENARIOS.find((s) => s.id === 'digital-data-quality');
+          if (dqSc) handleSelectScenario(dqSc);
+          setCurrentDomain(getDomainById('data-quality'));
+        }}
+      />
+
+      {/* Job Interview Simulator Modal */}
+      <JobInterviewModal
+        isOpen={showJobInterviewModal}
+        onClose={() => setShowJobInterviewModal(false)}
+        onSpeakText={handleSpeakSingleWord}
+        onStartLiveInterviewTrack={handleStartLiveInterviewTrack}
+        onSendAnswerToChat={(ans) => handleUserSpeech(ans)}
+      />
+
       {/* Level & Career Track Modal */}
       <LevelAndTrackModal
         isOpen={showLevelModal}
@@ -744,12 +1092,13 @@ export const App: React.FC = () => {
         onSelectDomain={handleSelectDomain}
       />
 
-      {/* Scenario Modal */}
+      {/* Scenario Modal (With Places / Data Quality / Interview Categories) */}
       <ScenarioSelectorModal
         isOpen={showScenarioModal}
         onClose={() => setShowScenarioModal(false)}
         selectedScenarioId={scenario.id}
         onSelectScenario={handleSelectScenario}
+        initialCategory={scenarioModalCategory}
       />
 
       {/* Settings Modal */}

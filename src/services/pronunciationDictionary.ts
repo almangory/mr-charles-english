@@ -17,8 +17,28 @@ export const PRONUNCIATION_TRAPS: Record<string, PronunciationTrap> = {
     commonMistakes: ["re-seept", "reseept", "receept", "recipe", "recept"],
     angryQuote: "Good heavens! Did you just pronounce the 'P' in receipt?! By Queen Victoria's ghost, the 'P' has been dead and silent for four hundred years! It is re-SEET!",
     successQuote: "Splendid! Simply brilliant! The 'P' remains properly buried, and your receipt is spotless!",
-    explanation: "حرف P صامت تماماً في هذه الكلمة. تُنطق: ri-SEET.",
+    explanation: "حرف P صامت تماماً في هذه الكلمة (فاتورة/إيصال المتجر). تُنطق: ri-SEET.",
     audioSampleText: "receipt. You do not pronounce the P. It is receipt."
+  },
+  aisle: {
+    word: "aisle",
+    phonetic: "/aɪl/",
+    arabicHint: "آيْلْ (حرفا A و S صامتان، مثل كلمة I'll)",
+    commonMistakes: ["ay-zil", "ais-le", "izle", "eyezil"],
+    angryQuote: "Ais-le?! Bless my grocery basket! Are you lost in the supermarket?! The 'S' in aisle is completely silent! It sounds just like 'I'll'! Say: EYE-ul!",
+    successQuote: "Magnificent! Now you can stroll down the supermarket aisle with royal grace!",
+    explanation: "كلمة aisle (ممر في البقالة أو المتجر أو الطائرة) حرف S فيها صامت تماماً وتُنطق: EYE-ul.",
+    audioSampleText: "aisle. The S is completely silent: aisle."
+  },
+  espresso: {
+    word: "espresso",
+    phonetic: "/ɛˈsprɛsoʊ/",
+    arabicHint: "إِسْ-بْرِيسُّو (بالسين S وليس إكسبريسو بالـ X!)",
+    commonMistakes: ["expresso", "ex-presso", "ekspresso"],
+    angryQuote: "EX-presso?! Stop the café music immediately! It is a cup of coffee, NOT a high-speed express train! There is NO 'X' in espresso! Say: es-PRESS-oh!",
+    successQuote: "Ah, bellissimo and jolly good! A true barista's pronunciation of espresso!",
+    explanation: "في المقاهي، لا تقل أبداً Expresso بحرف X، بل انطقها بالسين الواضحة: es-PRESS-oh.",
+    audioSampleText: "espresso. No X sound at all: espresso."
   },
   comfortable: {
     word: "comfortable",
@@ -37,7 +57,7 @@ export const PRONUNCIATION_TRAPS: Record<string, PronunciationTrap> = {
     commonMistakes: ["desert", "dezert", "desser"],
     angryQuote: "Hold your horses! Did you just order a DESERT?! A Sahara of dry hot sand and scorpions for your dinner?! You desire des-SERT with two S's, sweet as pudding! Say: dih-ZURT!",
     successQuote: "Delicious! That sounded sweet and glorious! Now you shall have your pudding!",
-    explanation: "كلمة desert تعني الصحراء (DEZ-ert)، بينما dessert تعني الحلوى (dih-ZURT).",
+    explanation: "كلمة desert تعني الصحراء (DEZ-ert)، بينما dessert تعني الحلوى في المقهى أو المطعم (dih-ZURT).",
     audioSampleText: "dessert. Put the stress at the end: dessert."
   },
   subtle: {
@@ -67,7 +87,7 @@ export const PRONUNCIATION_TRAPS: Record<string, PronunciationTrap> = {
     commonMistakes: ["cloth-es", "cloths", "clothees"],
     angryQuote: "Cloth-es?! Are you an ancient Victorian monk reciting incantations?! It is ONE single syllable! It rhymes with 'close the door'! Say: CLOTHES!",
     successQuote: "Exquisite! You wear the King's English with style!",
-    explanation: "تُنطق كمقطع واحد سريع (كأنها Close)، ولا تُنطق أبداً cloth-es مقطعين.",
+    explanation: "تُنطق كمقطع واحد سريع (كأنها Close)، ولا تُنطق أبداً cloth-es مقطعين عند التسوق في المتاجر.",
     audioSampleText: "clothes. Just one syllable, like close."
   },
   island: {
@@ -96,8 +116,8 @@ export const PRONUNCIATION_TRAPS: Record<string, PronunciationTrap> = {
     arabicHint: "فِيجْ-تَبُلْ (3 مقاطع وليس 4)",
     commonMistakes: ["ve-ge-ta-ble", "vegeta-ble", "vegetable"],
     angryQuote: "Ve-ge-ta-ble?! Great Scott! You just stretched that broccoli into the next century! Three syllables only: VEJ-tuh-bul!",
-    successQuote: "Healthy and crisp! Even the vegetables are clapping!",
-    explanation: "تُختصر الكلمة لثلاثة مقاطع: VEJ-tuh-bul.",
+    successQuote: "Healthy and crisp! Even the vegetables in the grocery store are clapping!",
+    explanation: "في البقالة، تُختصر الكلمة لثلاثة مقاطع: VEJ-tuh-bul.",
     audioSampleText: "vegetable. Fast and crisp: vegetable."
   },
   salmon: {
@@ -157,10 +177,32 @@ export const PRONUNCIATION_TRAPS: Record<string, PronunciationTrap> = {
     commonMistakes: ["beach", "beatch"],
     angryQuote: "You want to eat a BEACH?! A sandy seashore with pebbles?! You want a PEACH, the juicy fruit! P-P-PEACH!",
     successQuote: "Sweet and juicy! That was a true PEACH!",
-    explanation: "فرق كبير بين Beach (شاطئ) و Peach (خوخ).",
+    explanation: "فرق كبير بين Beach (شاطئ) و Peach (خوخ في البقالة).",
     audioSampleText: "peach. Juicy fruit: peach."
+  },
+  accuracy: {
+    word: "accuracy",
+    phonetic: "/ˈækjərəsi/",
+    arabicHint: "أَكْ-يُورَ-سِي (دقة البيانات، التشديد في أول الكلمة)",
+    commonMistakes: ["a-kyoo-ray-see", "acuracy", "ak-yoor-a-see"],
+    angryQuote: "Hold the data pipeline! Your pronunciation of ACCURACY lacked accuracy! Place the stress right at the very beginning: AK-yuh-ruh-see!",
+    successQuote: "One hundred percent data accuracy! Your phonetics pass every governance audit!",
+    explanation: "من أهم مصطلحات جودة البيانات الرقمية، تُنطق بتشديد المقطع الأول: AK-yuh-ruh-see.",
+    audioSampleText: "accuracy. Stress the first syllable: accuracy."
+  },
+  hierarchy: {
+    word: "hierarchy",
+    phonetic: "/ˈhaɪərɑːrki/",
+    arabicHint: "هَايْ-رَارْ-كِي (تنتهي بصوت الكاف K)",
+    commonMistakes: ["hi-rar-tchi", "heerarky", "hier-archy"],
+    angryQuote: "Hi-rar-CHY?! By the Royal Data Governance Board, the 'CH' in hierarchy is a crisp Greek 'K'! Say: HIGH-uh-rahr-kee!",
+    successQuote: "Supreme! You sit at the very top of the linguistic hierarchy!",
+    explanation: "في هيكلة البيانات والمؤسسات، CH في hierarchy تُنطق كافاً: HIGH-uh-rahr-kee.",
+    audioSampleText: "hierarchy. Hard K at the end: hierarchy."
   }
 };
+
+export type ScenarioCategory = 'all' | 'places' | 'data-quality' | 'interview' | 'royal';
 
 export interface ScenarioTopic {
   id: string;
@@ -169,18 +211,123 @@ export interface ScenarioTopic {
   icon: string;
   description: string;
   level: "Beginner" | "Intermediate" | "Advanced";
+  category: ScenarioCategory;
   suggestedPrompts: string[];
   initialGreeting: string;
 }
 
 export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
+  // ================= EVERYDAY PLACES: STORES, GROCERIES & CAFÉS =================
+  {
+    id: "grocery-supermarket",
+    title: "البقالة والسوبرماركت (شراء المقاضي)",
+    titleEn: "Grocery Store & Supermarket",
+    icon: "🛒",
+    description: "محادثات البقالة اليومية: شراء الخضروات والفواكه الطازجة، السؤال عن الممرات (Aisles)، الأسعار، والدفع عند الكاشير.",
+    level: "Beginner",
+    category: "places",
+    suggestedPrompts: [
+      "Excuse me, which aisle has fresh organic vegetables and milk?",
+      "How much is a kilo of fresh salmon and sweet peaches?",
+      "Are these strawberries fresh today, and do you have whole wheat bread?",
+      "I will pay by card; may I have my receipt and a paper bag, please?"
+    ],
+    initialGreeting: "Welcome to Mangory's Royal Groceries & Supermarket! Fresh produce in aisle one, finest cheeses in aisle two! Tell me, my friend, what delicious items are on your shopping list today?"
+  },
+  {
+    id: "retail-shopping-store",
+    title: "المتاجر والتسوق وشراء الملابس",
+    titleEn: "Retail Store & Boutique Shopping",
+    icon: "🛍️",
+    description: "التسوق في المتاجر والمولات: السؤال عن المقاسات والألوان، غرفة القياس، التخفيضات، واستبدال المشتريات.",
+    level: "Beginner",
+    category: "places",
+    suggestedPrompts: [
+      "Excuse me, do you have these comfortable clothes in a medium size?",
+      "Where is the fitting room so I can try this jacket on?",
+      "Is there a discount on this item, and what is your refund policy?",
+      "I would like to exchange this shirt; here is my original receipt."
+    ],
+    initialGreeting: "Welcome to our flagship London Boutique! Every garment here is tailored to perfection. Are you looking for comfortable casual clothes, an interview suit, or a special gift today?"
+  },
+  {
+    id: "cafe-coffee-shop",
+    title: "المقاهي والكافيهات وطلب المشروبات",
+    titleEn: "Specialty Café & Coffee House",
+    icon: "☕",
+    description: "طلب القهوة المختصة (إسبريسو، لاتيه)، المخبوزات والحلوى (Dessert)، للجلوس أو السفري (Takeaway)، وطلب الحساب.",
+    level: "Beginner",
+    category: "places",
+    suggestedPrompts: [
+      "Good morning! May I have a double espresso and a warm croissant, please?",
+      "Can I get an iced latte with oat milk for takeaway?",
+      "What is your most popular chocolate dessert today?",
+      "Could we have the bill and the Wi-Fi password, please?"
+    ],
+    initialGreeting: "Ah, the rich aroma of freshly roasted beans and Earl Grey! Welcome to Café Mangory! Would you care for a crisp espresso, a creamy latte, or a sweet dessert for dine-in or takeaway?"
+  },
+  {
+    id: "restaurant-dining",
+    title: "المطعم والحجز وطلب الوجبات",
+    titleEn: "Fine Dining & Restaurant Ordering",
+    icon: "🍽️",
+    description: "حجز طاولة في مطعم، قراءة قائمة الطعام (Menu)، طلب الأطباق الرئيسية، السؤال عن المكونات، وطلب الفاتورة.",
+    level: "Intermediate",
+    category: "places",
+    suggestedPrompts: [
+      "Good evening, I would like a table for two near the window, please.",
+      "What is the chef's special recipe for grilled salmon tonight?",
+      "May we order fresh vegetable soup as a starter and chocolate dessert?",
+      "Everything was delicious! Could you bring the bill and receipt, please?"
+    ],
+    initialGreeting: "Good evening and welcome to The Royal Savoy Dining Room! Your table by the window is ready. Have you perused our menu, or shall I recommend the chef's signature salmon and vegetable dish?"
+  },
+
+  // ================= DIGITAL DATA QUALITY & GOVERNANCE =================
+  {
+    id: "digital-data-quality",
+    title: "قسم ومختبر جودة البيانات الرقمية وحوكمتها",
+    titleEn: "Digital Data Quality & Governance Lab",
+    icon: "📊",
+    description: "إتقان مصطلحات جودة البيانات الرقمية: الدقة (Accuracy)، الاكتمال (Completeness)، الاتساق، التنقية (Cleansing)، والـ Data Lineage.",
+    level: "Advanced",
+    category: "data-quality",
+    suggestedPrompts: [
+      "How do we measure data accuracy, completeness, and consistency?",
+      "We built an automated data cleansing and deduplication ETL pipeline.",
+      "Why is end-to-end data lineage essential for data governance?",
+      "Strict schema validation and anomaly detection protect our data integrity."
+    ],
+    initialGreeting: "Welcome to the Digital Data Quality & Governance Command Center! Here, a single null value or duplicate record is high treason! Which dimension shall we audit today: accuracy, completeness, consistency, or data lineage?"
+  },
+
+  // ================= JOB INTERVIEW & CAREER =================
+  {
+    id: "job-interview",
+    title: "إجراء مقابلة شخصية للتوظيف",
+    titleEn: "Executive & HR Job Interview",
+    icon: "💼",
+    description: "تدرب على المقابلات الشخصية للتوظيف: عرف بنفسك، اعرض نقاط قوتك وإنجازاتك بمنهجية STAR، وتحدث بثقة أمام لجنة التوظيف.",
+    level: "Intermediate",
+    category: "interview",
+    suggestedPrompts: [
+      "I am a dedicated professional with strong expertise in problem-solving.",
+      "I am very comfortable leading complex projects under tight deadlines.",
+      "I improved data accuracy by thirty percent and prevented operational chaos.",
+      "Could you tell me more about the company culture and growth opportunities?"
+    ],
+    initialGreeting: "Please, have a seat in our interview suite. I have your CV right here before me. Let us begin with the classic opener: tell me about yourself, your key strengths, and why we should select you for this role!"
+  },
+
+  // ================= ROYAL & PRONUNCIATION SCENARIOS =================
   {
     id: "free-talk",
-    title: "محادثة حرة مع مستر منقوري",
+    title: "محادثة حرة شاملة مع مستر منقوري",
     titleEn: "Free Banter with Mr. Mangory",
     icon: "🎩",
-    description: "تحدث معه عن يومك، الطقس الإنجليزي، أو اسأله أي سؤال يخطر ببالك!",
+    description: "تحدث معه في أي موضوع يخطر ببالك: يومك، الرياضة، التقنية، السفر، أو الحياة اليومية!",
     level: "Beginner",
+    category: "royal",
     suggestedPrompts: [
       "Hello Mr. Mangory, how is the weather today?",
       "Can you give me a receipt for my tea?",
@@ -194,8 +341,9 @@ export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
     title: "حفلة الشاي الملكية والآداب",
     titleEn: "The Aristocratic Tea Party",
     icon: "🫖",
-    description: "تعلم آداب شرب الشاي، الجدل الأزلي حول وضع الحليب أولاً، والحديث المهذب.",
+    description: "تعلم آداب شرب الشاي، الجدل الأزلي حول وضع الحليب أولاً، والحديث الإنجليزي المهذب.",
     level: "Intermediate",
+    category: "royal",
     suggestedPrompts: [
       "May I have some Earl Grey tea with milk, please?",
       "Should I put the milk before the tea, or after?",
@@ -209,38 +357,25 @@ export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
     title: "تحدي فخاخ النطق القاتلة",
     titleEn: "The Pronunciation Gauntlet",
     icon: "⚡",
-    description: "أخطر الكلمات التي يعاني منها الجميع: receipt, subtle, vegetable, chaos, salmon!",
+    description: "أخطر الكلمات التي يعاني منها الجميع: receipt, aisle, espresso, subtle, vegetable, chaos, salmon, accuracy!",
     level: "Advanced",
+    category: "royal",
     suggestedPrompts: [
       "I found subtle chaos in Wednesday's recipe.",
-      "The comfortable island had delicious dessert.",
-      "Please park your car before eating fresh salmon.",
-      "She folded her clothes on the quiet island."
+      "Walk down the grocery aisle to get an espresso and a receipt.",
+      "High data accuracy sits at the top of our governance hierarchy.",
+      "She folded her comfortable clothes on the quiet island."
     ],
     initialGreeting: "Aha! You dare enter the Pronunciation Gauntlet?! Let us see if your tongue can conquer the silent letters and sneaky syllables without making my monocle explode! Choose a challenge!"
   },
   {
-    id: "job-interview",
-    title: "مقابلة عمل مع اللورد منقوري",
-    titleEn: "Job Interview with Lord Mangory",
-    icon: "💼",
-    description: "تدرب على اللغة الإنجليزية الرسمية واعرض مهاراتك بثقة وأناقة دبلوماسية.",
-    level: "Intermediate",
-    suggestedPrompts: [
-      "I am very comfortable leading complex projects.",
-      "I can adapt my schedule to meet company deadlines.",
-      "I managed crisis situations without any chaos.",
-      "Could you tell me more about the company culture?"
-    ],
-    initialGreeting: "Please, have a seat. I have reviewed your portfolio. Let us see how well you articulate your vision without mumbling or stuttering. Tell me: why should we bestow this prestigious role upon you?"
-  },
-  {
     id: "travel-london",
-    title: "السياحة والتنقل في لندن",
+    title: "السياحة والتنقل في لندن والمطار",
     titleEn: "London Underground & Travel Survival",
     icon: "🚇",
-    description: "شراء تذاكر القطار، حجز الفنادق، السؤال عن الاتجاهات، وطلب الطعام.",
+    description: "شراء تذاكر القطار، المطار، حجز الفنادق، السؤال عن الاتجاهات، والتجول في لندن.",
     level: "Beginner",
+    category: "places",
     suggestedPrompts: [
       "Excuse me, how can I get a receipt for the train ticket?",
       "Is this train stopping at Piccadilly Circus on Wednesday?",
@@ -255,12 +390,10 @@ export const CONVERSATION_SCENARIOS: ScenarioTopic[] = [
 export function detectPronunciationTrap(spokenText: string): PronunciationTrap | null {
   const clean = spokenText.toLowerCase();
   for (const [key, trap] of Object.entries(PRONUNCIATION_TRAPS)) {
-    // Check if the target word is in the transcript OR if any of its typical misheard spellings occurred
     const regex = new RegExp(`\\b${key}\\b`, 'i');
     if (regex.test(clean)) {
       return trap;
     }
-    // Also check typical misrecognitions
     for (const mistake of trap.commonMistakes) {
       if (clean.includes(mistake.toLowerCase())) {
         return trap;
